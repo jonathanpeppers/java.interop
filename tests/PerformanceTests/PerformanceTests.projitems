@@ -5,7 +5,7 @@
     <HasSharedItems>true</HasSharedItems>
     <SharedGUID>{0FBECD2A-7C91-41AB-A4B4-B781E8EC8479}</SharedGUID>
   </PropertyGroup>
-  <Import Project="$(MSBuildThisFileDirectory)..\..\bin\Build$(Configuration)\JdkInfo.props" Condition="Exists('$(MSBuildThisFileDirectory)..\..\bin\Build$(Configuration)\JdkInfo.props')" />
+  <Import Project="$(MSBuildThisFileDirectory)..\..\bin\Build$(Configuration)\JdkInfo.props" />
   <PropertyGroup Label="Configuration">
     <Import_RootNamespace>Java.Interop.PerformanceTests</Import_RootNamespace>
   </PropertyGroup>

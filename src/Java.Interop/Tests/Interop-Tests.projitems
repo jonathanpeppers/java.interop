@@ -8,7 +8,7 @@
   <PropertyGroup Label="Configuration">
     <Import_RootNamespace>Java.InteropTests</Import_RootNamespace>
   </PropertyGroup>
-  <Import Project="$(MSBuildThisFileDirectory)..\..\..\bin\Build$(Configuration)\JdkInfo.props" Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\bin\Build$(Configuration)\JdkInfo.props')" />
+  <Import Project="$(MSBuildThisFileDirectory)..\..\..\bin\Build$(Configuration)\JdkInfo.props" />
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)Cadenza.Collections\CollectionContract.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Cadenza.Collections\EnumerableContract.cs" />
