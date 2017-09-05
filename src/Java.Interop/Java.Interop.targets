@@ -2,8 +2,10 @@
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Runtime Condition="'$(OS)' != 'Windows_NT'">mono</Runtime>
+    <_ImportConfiguration Condition=" $(Configuration.StartsWith('XAIntegration')) ">$(Configuration.Replace('XAIntegration', ''))</_ImportConfiguration>
+    <_ImportConfiguration Condition=" !$(Configuration.StartsWith('XAIntegration')) ">$(Configuration)</_ImportConfiguration>
   </PropertyGroup>
-  <Import Project="..\..\bin\Build$(Configuration)\JdkInfo.props" />
+  <Import Project="..\..\bin\Build$(_ImportConfiguration)\JdkInfo.props" />
   <Target Name="BuildJnienvGen"
       Inputs="..\..\build-tools\jnienv-gen\jnienv-gen.csproj"
       Outputs="..\..\bin\Build$(Configuration)\jnienv-gen.exe">
