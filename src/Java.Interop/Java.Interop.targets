@@ -2,16 +2,16 @@
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Runtime Condition="'$(OS)' != 'Windows_NT'">mono</Runtime>
-    <_ImportConfiguration Condition=" $(Configuration.StartsWith('XAIntegration')) ">$(Configuration.Replace('XAIntegration', ''))</_ImportConfiguration>
-    <_ImportConfiguration Condition=" !$(Configuration.StartsWith('XAIntegration')) ">$(Configuration)</_ImportConfiguration>
+    <_Configuration Condition=" $(Configuration.StartsWith('XAIntegration')) ">$(Configuration.Replace('XAIntegration', ''))</_Configuration>
+    <_Configuration Condition=" !$(Configuration.StartsWith('XAIntegration')) ">$(Configuration)</_Configuration>
   </PropertyGroup>
-  <Import Project="..\..\bin\Build$(_ImportConfiguration)\JdkInfo.props" />
+  <Import Project="..\..\bin\Build$(_Configuration)\JdkInfo.props" />
   <Target Name="BuildJnienvGen"
       Inputs="..\..\build-tools\jnienv-gen\jnienv-gen.csproj"
-      Outputs="..\..\bin\Build$(Configuration)\jnienv-gen.exe">
+      Outputs="..\..\bin\Build$(_Configuration)\jnienv-gen.exe">
     <MSBuild
         Projects="..\..\build-tools\jnienv-gen\jnienv-gen.csproj"
-        Properties="Configuration=$(Configuration)"
+        Properties="Configuration=$(_Configuration)"
     />
   </Target>
   <Target Name="BuildJniEnvironment_g_cs"
@@ -19,7 +19,7 @@
       Outputs="Java.Interop\JniEnvironment.g.cs;$(IntermediateOutputPath)\jni.c">
     <MakeDir Directories="$(IntermediateOutputPath)" />
     <Exec
-        Command="$(Runtime) &quot;..\..\bin\Build$(Configuration)\jnienv-gen.exe&quot; Java.Interop\JniEnvironment.g.cs $(IntermediateOutputPath)\jni.c"
+        Command="$(Runtime) &quot;..\..\bin\Build$(_Configuration)\jnienv-gen.exe&quot; Java.Interop\JniEnvironment.g.cs $(IntermediateOutputPath)\jni.c"
     />
   </Target>
   <Target Name="BuildInteropJar"
