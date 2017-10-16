@@ -4,7 +4,6 @@ using System.CodeDom.Compiler;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
-using Microsoft.CodeDom.Providers.DotNetCompilerPlatform;
 using NUnit.Framework;
 
 namespace generatortests
@@ -20,6 +19,15 @@ namespace generatortests
 			//Taking advantage of Roslyn feature here: https://github.com/aspnet/RoslynCodeDomProvider/pull/12
 			string roslynPath = Path.GetFullPath (Path.Combine (unitTestFrameworkAssemblyPath, "..", "..", "..", "packages", "Microsoft.Net.Compilers.2.1.0", "tools"));
 			Environment.SetEnvironmentVariable ("ROSLYN_COMPILER_LOCATION", roslynPath, EnvironmentVariableTarget.Process);
+		}
+
+		static CodeDomProvider GetCodeDomProvider ()
+		{
+			if (Environment.OSVersion.Platform == PlatformID.Win32NT) {
+				return new Microsoft.CodeDom.Providers.DotNetCompilerPlatform.CSharpCodeProvider ();
+			} else {
+				return new Microsoft.CSharp.CSharpCodeProvider ();
+			}
 		}
 
 		public static Assembly Compile (Xamarin.Android.Binder.CodeGeneratorOptions options,
@@ -58,7 +66,7 @@ namespace generatortests
 			parameters.IncludeDebugInformation = false;
 #endif
 
-			using (CSharpCodeProvider codeProvider = new CSharpCodeProvider ()) {
+			using (var codeProvider = GetCodeDomProvider ()) {
 				CompilerResults results = codeProvider.CompileAssemblyFromFile (parameters, sourceFiles.ToArray ());
 
 				hasErrors = false;
