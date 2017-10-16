@@ -340,7 +340,6 @@ namespace Xamarin.Android.Tools.Bytecode {
 			var contents    = ToXElement ();
 			using (var writer = XmlWriter.Create (textWriter, settings))
 				contents.Save (writer);
-			textWriter.WriteLine ();
 		}
 	}
 }

@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 
 using Xamarin.Android.Tools.Bytecode;
 
@@ -20,9 +21,16 @@ namespace Xamarin.Android.Tools.BytecodeTests {
 
 		protected static string LoadString (string resource)
 		{
+			var builder = new StringBuilder();
 			using (var s = Assembly.GetExecutingAssembly ().GetManifestResourceStream (resource))
-			using (var r = new StreamReader (s))
-				return r.ReadToEnd ();
+			using (var r = new StreamReader (s)) {
+				while (!r.EndOfStream) {
+					if (builder.Length > 0)
+						builder.Append ('\n');
+					builder.Append (r.ReadLine ());
+				}
+			}
+			return builder.ToString ();
 		}
 
 		protected static void AssertXmlDeclaration (string classResource, string xmlResource, string documentationPath = null, JavaDocletType? javaDocletType = null)
