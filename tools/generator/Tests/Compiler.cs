@@ -3,10 +3,9 @@ using System.Reflection;
 using System.CodeDom.Compiler;
 using System.IO;
 using System.Linq;
-using Microsoft.CSharp;
 using System.Collections.Generic;
+using Microsoft.CodeDom.Providers.DotNetCompilerPlatform;
 using NUnit.Framework;
-using Xamarin.Android.Binder;
 
 namespace generatortests
 {
@@ -15,6 +14,13 @@ namespace generatortests
 
 		private static string unitTestFrameworkAssemblyPath = typeof(Assert).Assembly.Location;
 		private static string supportFilePath = typeof(Compiler).Assembly.Location;
+
+		static Compiler()
+		{
+			//Taking advantage of Roslyn feature here: https://github.com/aspnet/RoslynCodeDomProvider/pull/12
+			string roslynPath = Path.GetFullPath (Path.Combine (unitTestFrameworkAssemblyPath, "..", "..", "..", "packages", "Microsoft.Net.Compilers.2.1.0", "tools"));
+			Environment.SetEnvironmentVariable ("ROSLYN_COMPILER_LOCATION", roslynPath, EnvironmentVariableTarget.Process);
+		}
 
 		public static Assembly Compile (Xamarin.Android.Binder.CodeGeneratorOptions options,
 			string assemblyFileName, IEnumerable<string> AdditionalSourceDirectories,
@@ -25,7 +31,7 @@ namespace generatortests
 				SearchOption.AllDirectories).ToList ();
 			sourceFiles = sourceFiles.Select (x => Path.GetFullPath(x)).ToList ();
 
-			var supportFiles = Directory.EnumerateFiles (Path.Combine (Path.GetDirectoryName (supportFilePath), "SupportFiles"),
+			var supportFiles = Directory.EnumerateFiles (Path.Combine (Path.GetDirectoryName (unitTestFrameworkAssemblyPath), "SupportFiles"),
 				"*.cs", SearchOption.AllDirectories);
 			sourceFiles.AddRange (supportFiles);
 
@@ -52,17 +58,18 @@ namespace generatortests
 			parameters.IncludeDebugInformation = false;
 #endif
 
-			CSharpCodeProvider codeProvider = new CSharpCodeProvider ();
-			CompilerResults results = codeProvider.CompileAssemblyFromFile (parameters,sourceFiles.ToArray ());
+			using (CSharpCodeProvider codeProvider = new CSharpCodeProvider ()) {
+				CompilerResults results = codeProvider.CompileAssemblyFromFile (parameters, sourceFiles.ToArray ());
 
-			hasErrors   = false;
+				hasErrors = false;
 
-			foreach (CompilerError message in results.Errors) {
-				hasErrors   = hasErrors || (!message.IsWarning);
+				foreach (CompilerError message in results.Errors) {
+					hasErrors = hasErrors || (!message.IsWarning);
+				}
+				output = string.Join (Environment.NewLine, results.Output.Cast<string> ());
+
+				return results.CompiledAssembly;
 			}
-			output  = string.Join (Environment.NewLine, results.Output.Cast<string> ());
-
-			return results.CompiledAssembly;
 		}
 
 		static string GetFacadesPath ()
