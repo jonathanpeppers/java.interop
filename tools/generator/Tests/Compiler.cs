@@ -10,20 +10,21 @@ namespace generatortests
 {
 	public static class Compiler
 	{
-
+		const string RoslynEnvironmentVariable = "ROSLYN_COMPILER_LOCATION";
 		private static string unitTestFrameworkAssemblyPath = typeof(Assert).Assembly.Location;
 		private static string supportFilePath = typeof(Compiler).Assembly.Location;
-
-		static Compiler()
-		{
-			//Taking advantage of Roslyn feature here: https://github.com/aspnet/RoslynCodeDomProvider/pull/12
-			string roslynPath = Path.GetFullPath (Path.Combine (unitTestFrameworkAssemblyPath, "..", "..", "..", "packages", "Microsoft.Net.Compilers.2.1.0", "tools"));
-			Environment.SetEnvironmentVariable ("ROSLYN_COMPILER_LOCATION", roslynPath, EnvironmentVariableTarget.Process);
-		}
 
 		static CodeDomProvider GetCodeDomProvider ()
 		{
 			if (Environment.OSVersion.Platform == PlatformID.Win32NT) {
+				//NOTE: there is an issue where Roslyn's csc.exe isn't copied to output for non-ASP.NET project
+				// Comments on this here: https://stackoverflow.com/a/40311406/132442
+				// They added an environment variable as a workaround: https://github.com/aspnet/RoslynCodeDomProvider/pull/12
+				if (Environment.GetEnvironmentVariable (RoslynEnvironmentVariable, EnvironmentVariableTarget.Process) == null) {
+					string roslynPath = Path.GetFullPath (Path.Combine (unitTestFrameworkAssemblyPath, "..", "..", "..", "packages", "Microsoft.Net.Compilers.2.1.0", "tools"));
+					Environment.SetEnvironmentVariable (RoslynEnvironmentVariable, roslynPath, EnvironmentVariableTarget.Process);
+				}
+
 				return new Microsoft.CodeDom.Providers.DotNetCompilerPlatform.CSharpCodeProvider ();
 			} else {
 				return new Microsoft.CSharp.CSharpCodeProvider ();
