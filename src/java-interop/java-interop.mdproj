@@ -50,6 +50,7 @@
   <PropertyGroup>
     <BuildDependsOn>
       BuildJni_c;
+      BuildWindows;
       BuildMac;
       BuildUnixLibraries;
       $(BuildDependsOn)
@@ -64,6 +65,27 @@
       Outputs="jni.c">
     <MakeDir Directories="$(OutputPath)" />
     <Exec Command="$(Runtime) &quot;$(JNIEnvGenPath)\jnienv-gen.exe&quot; jni.g.cs jni.c" />
+  </Target>
+  <Target Name="BuildWindows"
+      Condition=" '$(OS)' == 'Windows_NT' "
+      Inputs="@(Compile)"
+      Outputs="$(OutputPath)\$(OutputName).dll">
+    <PropertyGroup>
+      <_FixedDefines>$(DefineSymbols.Split(' '))</_FixedDefines>
+    </PropertyGroup>
+    <ItemGroup>
+      <_Defines Include="$(_FixedDefines)" />
+    </ItemGroup>
+    <PropertyGroup>
+      <_Gcc>C:\Program Files (x86)\mingw-w64\i686-7.2.0-win32-dwarf-rt_v5-rev0\mingw32\bin\gcc.exe</_Gcc>
+      <_CppFlags>@(_Defines -&gt; '-D%(Identity)', ' ')</_CppFlags>
+      <_Includes>@(MonoIncludePath-&gt;'-I &quot;%(Identity)&quot;', ' ') @(JdkIncludePath-&gt;'-I &quot;%(Identity)&quot;', ' ')</_Includes>
+      <_LinkFlags>-fvisibility=hidden -Wl,-undefined -Wl,suppress -Wl,-flat_namespace</_LinkFlags>
+      <_Libs>$(MonoLibs)</_Libs>
+      <_Files>@(Compile -&gt; '%(Identity)', ' ')</_Files>
+    </PropertyGroup>
+    <MakeDir Directories="obj" />
+    <Exec Command="&quot;$(_Gcc)&quot; -g -shared -std=c99 -o &quot;$(OutputPath)\$(OutputName).dll&quot; %(MacLibLipo.Arch) $(_CppFlags) $(_LinkFlags) $(_Libs) $(_Includes) $(_Files)" />
   </Target>
   <Target Name="BuildMac"
       Condition=" '$(OS)' != 'Windows_NT' And Exists ('/Library/Frameworks/')"

@@ -17,7 +17,11 @@
 	#include "logger.h"
 #endif  /* !defined (ANDROID) */
 
-#include <dlfcn.h>
+#if defined (_WIN32)
+	#include <windows.h>
+#else
+	#include <dlfcn.h>
+#endif
 
 typedef struct MonoJavaGCBridgeInfo {
 	MonoClass          *klass;
