@@ -35,7 +35,7 @@ namespace Xamarin.Test {
 					get { return typeof (IFactoryInvoker); }
 				}
 
-				new IntPtr class_ref;
+				IntPtr class_ref;
 
 				public static IFactory GetObject (IntPtr handle, JniHandleOwnership transfer)
 				{
@@ -94,8 +94,8 @@ namespace Xamarin.Test {
 			}
 
 
-			internal static new IntPtr java_class_handle;
-			internal static new IntPtr class_ref {
+			internal static IntPtr java_class_handle;
+			internal static IntPtr class_ref {
 				get {
 					return JNIEnv.FindClass ("xamarin/test/NotificationCompatBase$Action", ref java_class_handle);
 				}
@@ -129,8 +129,8 @@ namespace Xamarin.Test {
 		[global::Android.Runtime.Register ("xamarin/test/NotificationCompatBase$InstanceInner", DoNotGenerateAcw=true)]
 		public abstract partial class InstanceInner : global::Java.Lang.Object {
 
-			internal static new IntPtr java_class_handle;
-			internal static new IntPtr class_ref {
+			internal static IntPtr java_class_handle;
+			internal static IntPtr class_ref {
 				get {
 					return JNIEnv.FindClass ("xamarin/test/NotificationCompatBase$InstanceInner", ref java_class_handle);
 				}
@@ -190,8 +190,8 @@ namespace Xamarin.Test {
 		}
 
 
-		internal static new IntPtr java_class_handle;
-		internal static new IntPtr class_ref {
+		internal static IntPtr java_class_handle;
+		internal static IntPtr class_ref {
 			get {
 				return JNIEnv.FindClass ("xamarin/test/NotificationCompatBase", ref java_class_handle);
 			}

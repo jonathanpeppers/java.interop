@@ -28,7 +28,7 @@ namespace Test.ME {
 			}
 		}
 
-		new static JniPeerMembers _members = new JniPeerMembers ("test/me/TestInterface", typeof (TestInterface));
+		 static JniPeerMembers _members = new JniPeerMembers ("test/me/TestInterface", typeof (TestInterface));
 	}
 
 	[Register ("test/me/TestInterface", DoNotGenerateAcw=true)]
@@ -80,7 +80,7 @@ namespace Test.ME {
 	[global::Android.Runtime.Register ("test/me/TestInterface", DoNotGenerateAcw=true)]
 	internal class ITestInterfaceInvoker : global::Java.Lang.Object, ITestInterface {
 
-		internal    new     static  readonly    JniPeerMembers  _members    = new JniPeerMembers ("test/me/TestInterface", typeof (ITestInterfaceInvoker));
+		internal         static  readonly    JniPeerMembers  _members    = new JniPeerMembers ("test/me/TestInterface", typeof (ITestInterfaceInvoker));
 
 		static IntPtr java_class_ref {
 			get { return _members.JniPeerType.PeerReference.Handle; }
@@ -98,7 +98,7 @@ namespace Test.ME {
 			get { return _members.ManagedPeerType; }
 		}
 
-		new IntPtr class_ref;
+		IntPtr class_ref;
 
 		public static ITestInterface GetObject (IntPtr handle, JniHandleOwnership transfer)
 		{

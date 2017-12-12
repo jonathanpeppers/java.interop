@@ -31,41 +31,53 @@ namespace generatortests
 			}
 		}
 
-		public static Assembly Compile (Xamarin.Android.Binder.CodeGeneratorOptions options,
-			string assemblyFileName, IEnumerable<string> AdditionalSourceDirectories,
-			out bool hasErrors, out string output, bool allowWarnings)
+		public static string CompileSupportAssembly (Xamarin.Android.Binder.CodeGeneratorOptions options,
+			out bool hasErrors, out string output)
 		{
 			var generatedCodePath = options.ManagedCallableWrapperSourceOutputDirectory;
-			var sourceFiles = Directory.EnumerateFiles (generatedCodePath, "*.cs",
-				SearchOption.AllDirectories).ToList ();
-			sourceFiles = sourceFiles.Select (x => Path.GetFullPath(x)).ToList ();
+			var sourceFiles = Directory.EnumerateFiles (generatedCodePath, "Java.Lang.*.cs", SearchOption.AllDirectories)
+				.Select (x => Path.GetFullPath (x))
+				.ToList ();
 
 			var supportFiles = Directory.EnumerateFiles (Path.Combine (Path.GetDirectoryName (supportFilePath), "SupportFiles"),
 				"*.cs", SearchOption.AllDirectories);
 			sourceFiles.AddRange (supportFiles);
+
+			var path = Path.Combine (Path.GetTempPath (), Path.GetRandomFileName ());
+			var parameters = CreateParameters (path, false);
+			using (var codeProvider = GetCodeDomProvider ()) {
+				var results = codeProvider.CompileAssemblyFromFile (parameters, sourceFiles.ToArray ());
+
+				hasErrors = false;
+
+				//NOTE: due to the tests generating Java.Lang.Object or Java.Lang.String, we will get some warnings
+				foreach (CompilerError message in results.Errors) {
+					hasErrors |= !message.IsWarning || !message.ErrorText.Contains ("Java.Lang.");
+				}
+				output = string.Join (Environment.NewLine, results.Output.Cast<string> ());
+
+				return results.PathToAssembly;
+			}
+		}
+
+		public static Assembly Compile (Xamarin.Android.Binder.CodeGeneratorOptions options,
+			IEnumerable<string> AdditionalSourceDirectories,
+			string assemblyFileName, string supportAssemblyPath,
+			out bool hasErrors, out string output, bool allowWarnings)
+		{
+			var generatedCodePath = options.ManagedCallableWrapperSourceOutputDirectory;
+			var sourceFiles = Directory.EnumerateFiles (generatedCodePath, "*.cs", SearchOption.AllDirectories)
+				.Where (x => !x.Contains ("Java.Lang."))
+				.Select (x => Path.GetFullPath(x))
+				.ToList ();
 
 			foreach (var dir in AdditionalSourceDirectories) {
 				var additonal = Directory.EnumerateFiles (dir, "*.cs", SearchOption.AllDirectories);
 				sourceFiles.AddRange (additonal);
 			}
 
-			CompilerParameters parameters = new CompilerParameters ();
-			parameters.GenerateExecutable = false;
-			parameters.GenerateInMemory = true;
-			parameters.CompilerOptions = "/unsafe";
-			parameters.OutputAssembly = assemblyFileName;
-			parameters.ReferencedAssemblies.Add (unitTestFrameworkAssemblyPath);
-			parameters.ReferencedAssemblies.Add (typeof (Enumerable).Assembly.Location);
-
-			var binDir  = Path.GetDirectoryName (typeof (BaseGeneratorTest).Assembly.Location);
-			var facDir  = GetFacadesPath ();
-			parameters.ReferencedAssemblies.Add (Path.Combine (binDir, "Java.Interop.dll"));
-			parameters.ReferencedAssemblies.Add (Path.Combine (facDir, "System.Runtime.dll"));
-#if DEBUG
-			parameters.IncludeDebugInformation = true;
-#else
-			parameters.IncludeDebugInformation = false;
-#endif
+			var parameters = CreateParameters (assemblyFileName, false);
+			parameters.ReferencedAssemblies.Add (supportAssemblyPath);
 
 			using (var codeProvider = GetCodeDomProvider ()) {
 				CompilerResults results = codeProvider.CompileAssemblyFromFile (parameters, sourceFiles.ToArray ());
@@ -79,6 +91,28 @@ namespace generatortests
 
 				return results.CompiledAssembly;
 			}
+		}
+
+		static CompilerParameters CreateParameters (string assemblyFileName, bool inMemory)
+		{
+			var parameters = new CompilerParameters ();
+			parameters.GenerateExecutable = false;
+			parameters.GenerateInMemory = inMemory;
+			parameters.CompilerOptions = "/unsafe";
+			parameters.OutputAssembly = assemblyFileName;
+			parameters.ReferencedAssemblies.Add (unitTestFrameworkAssemblyPath);
+			parameters.ReferencedAssemblies.Add (typeof (Enumerable).Assembly.Location);
+
+			var binDir = Path.GetDirectoryName (typeof (BaseGeneratorTest).Assembly.Location);
+			var facDir = GetFacadesPath ();
+			parameters.ReferencedAssemblies.Add (Path.Combine (binDir, "Java.Interop.dll"));
+			parameters.ReferencedAssemblies.Add (Path.Combine (facDir, "System.Runtime.dll"));
+#if DEBUG
+			parameters.IncludeDebugInformation = true;
+#else
+			parameters.IncludeDebugInformation = false;
+#endif
+			return parameters;
 		}
 
 		static string GetFacadesPath ()

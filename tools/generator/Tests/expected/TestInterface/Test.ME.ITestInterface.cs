@@ -28,7 +28,7 @@ namespace Test.ME {
 			}
 		}
 
-		new static IntPtr class_ref = JNIEnv.FindClass ("test/me/TestInterface");
+		static IntPtr class_ref = JNIEnv.FindClass ("test/me/TestInterface");
 	}
 
 	[Register ("test/me/TestInterface", DoNotGenerateAcw=true)]
@@ -90,7 +90,7 @@ namespace Test.ME {
 			get { return typeof (ITestInterfaceInvoker); }
 		}
 
-		new IntPtr class_ref;
+		IntPtr class_ref;
 
 		public static ITestInterface GetObject (IntPtr handle, JniHandleOwnership transfer)
 		{

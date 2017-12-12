@@ -22,7 +22,7 @@ namespace Test.ME {
 	[global::Android.Runtime.Register ("test/me/GenericPropertyInterface", DoNotGenerateAcw=true)]
 	internal class IGenericPropertyInterfaceInvoker : global::Java.Lang.Object, IGenericPropertyInterface {
 
-		internal    new     static  readonly    JniPeerMembers  _members    = new JniPeerMembers ("test/me/GenericPropertyInterface", typeof (IGenericPropertyInterfaceInvoker));
+		internal         static  readonly    JniPeerMembers  _members    = new JniPeerMembers ("test/me/GenericPropertyInterface", typeof (IGenericPropertyInterfaceInvoker));
 
 		static IntPtr java_class_ref {
 			get { return _members.JniPeerType.PeerReference.Handle; }
@@ -40,7 +40,7 @@ namespace Test.ME {
 			get { return _members.ManagedPeerType; }
 		}
 
-		new IntPtr class_ref;
+		IntPtr class_ref;
 
 		public static IGenericPropertyInterface GetObject (IntPtr handle, JniHandleOwnership transfer)
 		{

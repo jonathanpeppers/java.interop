@@ -3,11 +3,10 @@ using System.IO;
 
 namespace MonoDroid.Generation {
 
-	class XamarinAndroidCodeGenerator : CodeGenerator {
-
+	class XamarinAndroidCodeGenerator : CodeGenerator
+	{
 		internal override void WriteClassHandle (ClassGen type, StreamWriter sw, string indent, CodeGenerationOptions opt, bool requireNew)
 		{
-
 			sw.WriteLine ("{0}\tinternal static {1}IntPtr java_class_handle;", indent, requireNew ? "new " : string.Empty);
 			sw.WriteLine ("{0}\tinternal static {1}IntPtr class_ref {{", indent, requireNew ? "new " : string.Empty);
 			sw.WriteLine ("{0}\t\tget {{", indent);
@@ -29,7 +28,7 @@ namespace MonoDroid.Generation {
 
 		internal override void WriteClassHandle (InterfaceGen type, StreamWriter sw, string indent, CodeGenerationOptions opt, string declaringType)
 		{
-			sw.WriteLine ("{0}new static IntPtr class_ref = JNIEnv.FindClass (\"{1}\");", indent, type.RawJniName);
+			sw.WriteLine ("{0}static IntPtr class_ref = JNIEnv.FindClass (\"{1}\");", indent, type.RawJniName);
 		}
 
 		internal override void WriteClassInvokerHandle (ClassGen type, StreamWriter sw, string indent, CodeGenerationOptions opt, string declaringType)

@@ -41,10 +41,19 @@ namespace generatortests
 			}
 			bool    hasErrors;
 			string  compilerOutput;
-			BuiltAssembly = Compiler.Compile (Options, "Mono.Android", AdditionalSourceDirectories,
-				out hasErrors, out compilerOutput, AllowWarnings);
-			Assert.AreEqual (false, hasErrors, compilerOutput);
-			Assert.IsNotNull (BuiltAssembly);
+			string  supportAssembly = Compiler.CompileSupportAssembly (Options, out hasErrors, out compilerOutput);
+			try {
+				Assert.AreEqual (false, hasErrors, compilerOutput);
+				Assert.IsTrue (File.Exists (supportAssembly), "Support assembly did not exist!");
+				BuiltAssembly = Compiler.Compile (Options, AdditionalSourceDirectories, "Mono.Android", supportAssembly,
+					out hasErrors, out compilerOutput, AllowWarnings);
+				Assert.AreEqual (false, hasErrors, compilerOutput);
+				Assert.IsNotNull (BuiltAssembly);
+			} finally {
+				if (File.Exists (supportAssembly)) {
+					File.Delete (supportAssembly);
+				}
+			}
 		}
 
 		protected void CompareOutputs (string sourceDir, string destinationDir)
@@ -61,6 +70,10 @@ namespace generatortests
 				} else if (!FileCompare (file, dest)) {
 					var fullSource  = Path.GetFullPath (file);
 					var fullDest    = Path.GetFullPath (dest);
+
+					//NOTE: uncomment to "approve" the change
+					//File.Copy (fullDest, fullSource.Replace ("bin/TestDebug", "tools/generator/Tests"), true);
+
 					string message  = $"File contents differ; run: diff -u {fullSource} \\{Environment.NewLine}\t{fullDest}";
 					Assert.Fail (message);
 				}
