@@ -14,7 +14,7 @@ namespace Xamarin.Test {
 	[global::Android.Runtime.Register ("xamarin/test/Adapter", DoNotGenerateAcw=true)]
 	internal class IAdapterInvoker : global::Java.Lang.Object, IAdapter {
 
-		internal    new     static  readonly    JniPeerMembers  _members    = new JniPeerMembers ("xamarin/test/Adapter", typeof (IAdapterInvoker));
+		internal         static  readonly    JniPeerMembers  _members    = new JniPeerMembers ("xamarin/test/Adapter", typeof (IAdapterInvoker));
 
 		static IntPtr java_class_ref {
 			get { return _members.JniPeerType.PeerReference.Handle; }
@@ -32,7 +32,7 @@ namespace Xamarin.Test {
 			get { return _members.ManagedPeerType; }
 		}
 
-		new IntPtr class_ref;
+		IntPtr class_ref;
 
 		public static IAdapter GetObject (IntPtr handle, JniHandleOwnership transfer)
 		{

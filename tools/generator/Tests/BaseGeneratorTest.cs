@@ -25,12 +25,23 @@ namespace generatortests
 			Options.OnlyBindPublicTypes = true;
 			sw = new StringWriter ();
 			AdditionalSourceDirectories = new List<string> ();
+			AdditionalSupportDirectories = new List<string> ();
 		}
 
-		protected CodeGeneratorOptions Options = null;
-		protected Assembly BuiltAssembly = null;
+		[TearDown]
+		public void Teardown()
+		{
+			if (!string.IsNullOrEmpty (SupportAssembly) && File.Exists (SupportAssembly)) {
+				File.Delete (SupportAssembly);
+			}
+		}
+
+		protected CodeGeneratorOptions Options;
+		protected Assembly BuiltAssembly;
 		protected List<string> AdditionalSourceDirectories;
+		protected List<string> AdditionalSupportDirectories;
 		protected bool AllowWarnings;
+		protected string SupportAssembly;
 
 		public void Execute ()
 		{
@@ -41,19 +52,13 @@ namespace generatortests
 			}
 			bool    hasErrors;
 			string  compilerOutput;
-			string  supportAssembly = Compiler.CompileSupportAssembly (Options, out hasErrors, out compilerOutput);
-			try {
-				Assert.AreEqual (false, hasErrors, compilerOutput);
-				Assert.IsTrue (File.Exists (supportAssembly), "Support assembly did not exist!");
-				BuiltAssembly = Compiler.Compile (Options, AdditionalSourceDirectories, "Mono.Android", supportAssembly,
-					out hasErrors, out compilerOutput, AllowWarnings);
-				Assert.AreEqual (false, hasErrors, compilerOutput);
-				Assert.IsNotNull (BuiltAssembly);
-			} finally {
-				if (File.Exists (supportAssembly)) {
-					File.Delete (supportAssembly);
-				}
-			}
+			SupportAssembly = Compiler.CompileSupportAssembly (Options, AdditionalSupportDirectories, out hasErrors, out compilerOutput);
+			Assert.AreEqual (false, hasErrors, compilerOutput);
+			Assert.IsTrue (File.Exists (SupportAssembly), "Support assembly did not exist!");
+			BuiltAssembly = Compiler.Compile (Options, AdditionalSourceDirectories, "Mono.Android", SupportAssembly,
+				out hasErrors, out compilerOutput, AllowWarnings);
+			Assert.AreEqual (false, hasErrors, compilerOutput);
+			Assert.IsNotNull (BuiltAssembly);
 		}
 
 		protected void CompareOutputs (string sourceDir, string destinationDir)
@@ -121,13 +126,13 @@ namespace generatortests
 			}
 		}
 
-		protected void RunAllTargets (string outputRelativePath, string apiDescriptionFile, string expectedRelativePath, string[] additionalSupportPaths = null)
+		protected void RunAllTargets (string outputRelativePath, string apiDescriptionFile, string expectedRelativePath, string[] additionalSupportPaths = null, string[] additionalSourcePaths = null)
 		{
-			Run (CodeGenerationTarget.XamarinAndroid,   Path.Combine ("out", outputRelativePath),       apiDescriptionFile,     Path.Combine ("expected", expectedRelativePath),        additionalSupportPaths);
-			Run (CodeGenerationTarget.JavaInterop1,     Path.Combine ("out.ji", outputRelativePath),    apiDescriptionFile,     Path.Combine ("expected.ji", expectedRelativePath),     additionalSupportPaths);
+			Run (CodeGenerationTarget.XamarinAndroid,   Path.Combine ("out", outputRelativePath),       apiDescriptionFile,     Path.Combine ("expected", expectedRelativePath),        additionalSupportPaths, additionalSourcePaths);
+			Run (CodeGenerationTarget.JavaInterop1,     Path.Combine ("out.ji", outputRelativePath),    apiDescriptionFile,     Path.Combine ("expected.ji", expectedRelativePath),     additionalSupportPaths, additionalSourcePaths);
 		}
 
-		protected void Run (CodeGenerationTarget target, string outputPath, string apiDescriptionFile, string expectedPath, string[] additionalSupportPaths = null)
+		protected void Run (CodeGenerationTarget target, string outputPath, string apiDescriptionFile, string expectedPath, string[] additionalSupportPaths = null, string[] additionalSourcePaths = null)
 		{
 			Cleanup (outputPath);
 
@@ -136,7 +141,9 @@ namespace generatortests
 			Options.ManagedCallableWrapperSourceOutputDirectory = outputPath;
 
 			if (additionalSupportPaths != null)
-				AdditionalSourceDirectories.AddRange (additionalSupportPaths);
+				AdditionalSupportDirectories.AddRange (additionalSupportPaths);
+			if (additionalSourcePaths != null)
+				AdditionalSourceDirectories.AddRange (additionalSourcePaths);
 
 			Execute ();
 

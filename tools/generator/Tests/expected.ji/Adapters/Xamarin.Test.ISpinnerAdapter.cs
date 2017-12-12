@@ -14,7 +14,7 @@ namespace Xamarin.Test {
 	[global::Android.Runtime.Register ("xamarin/test/SpinnerAdapter", DoNotGenerateAcw=true)]
 	internal class ISpinnerAdapterInvoker : global::Java.Lang.Object, ISpinnerAdapter {
 
-		internal    new     static  readonly    JniPeerMembers  _members    = new JniPeerMembers ("xamarin/test/SpinnerAdapter", typeof (ISpinnerAdapterInvoker));
+		internal         static  readonly    JniPeerMembers  _members    = new JniPeerMembers ("xamarin/test/SpinnerAdapter", typeof (ISpinnerAdapterInvoker));
 
 		static IntPtr java_class_ref {
 			get { return _members.JniPeerType.PeerReference.Handle; }
@@ -32,7 +32,7 @@ namespace Xamarin.Test {
 			get { return _members.ManagedPeerType; }
 		}
 
-		new IntPtr class_ref;
+		IntPtr class_ref;
 
 		public static ISpinnerAdapter GetObject (IntPtr handle, JniHandleOwnership transfer)
 		{

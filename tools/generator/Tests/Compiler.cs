@@ -32,6 +32,7 @@ namespace generatortests
 		}
 
 		public static string CompileSupportAssembly (Xamarin.Android.Binder.CodeGeneratorOptions options,
+			IEnumerable<string> additionalSupportDirectories,
 			out bool hasErrors, out string output)
 		{
 			var generatedCodePath = options.ManagedCallableWrapperSourceOutputDirectory;
@@ -42,6 +43,11 @@ namespace generatortests
 			var supportFiles = Directory.EnumerateFiles (Path.Combine (Path.GetDirectoryName (supportFilePath), "SupportFiles"),
 				"*.cs", SearchOption.AllDirectories);
 			sourceFiles.AddRange (supportFiles);
+
+			foreach (var dir in additionalSupportDirectories) {
+				var additonal = Directory.EnumerateFiles (dir, "*.cs", SearchOption.AllDirectories);
+				sourceFiles.AddRange (additonal);
+			}
 
 			var path = Path.Combine (Path.GetTempPath (), Path.GetRandomFileName ());
 			var parameters = CreateParameters (path, false);
@@ -61,7 +67,7 @@ namespace generatortests
 		}
 
 		public static Assembly Compile (Xamarin.Android.Binder.CodeGeneratorOptions options,
-			IEnumerable<string> AdditionalSourceDirectories,
+			IEnumerable<string> additionalSourceDirectories,
 			string assemblyFileName, string supportAssemblyPath,
 			out bool hasErrors, out string output, bool allowWarnings)
 		{
@@ -71,7 +77,7 @@ namespace generatortests
 				.Select (x => Path.GetFullPath(x))
 				.ToList ();
 
-			foreach (var dir in AdditionalSourceDirectories) {
+			foreach (var dir in additionalSourceDirectories) {
 				var additonal = Directory.EnumerateFiles (dir, "*.cs", SearchOption.AllDirectories);
 				sourceFiles.AddRange (additonal);
 			}
