@@ -65,6 +65,7 @@
     <Compile Include="Integration-Tests\CSharpKeywords.cs" />
     <Compile Include="Integration-Tests\GenericArguments.cs" />
     <Compile Include="Integration-Tests\InterfaceMethodsConflict.cs" />
+    <Compile Include="Unit-Tests\XamarinAndroidCodeGeneratorTests.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
