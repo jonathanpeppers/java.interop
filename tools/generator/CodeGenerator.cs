@@ -693,22 +693,22 @@ namespace MonoDroid.Generation {
 		{
 		}
 
-		internal    abstract    void    WriteClassHandle (ClassGen type,    StreamWriter sw,    string indent,  CodeGenerationOptions opt,  bool    requireNew);
+		internal    abstract    void    WriteClassHandle (ClassGen type,    TextWriter sw,    string indent,  CodeGenerationOptions opt,  bool    requireNew);
 
-		internal    abstract    void    WriteClassHandle (InterfaceGen type,            StreamWriter sw,    string indent,  CodeGenerationOptions opt,  string  declaringType);
+		internal    abstract    void    WriteClassHandle (InterfaceGen type,            TextWriter sw,    string indent,  CodeGenerationOptions opt,  string  declaringType);
 
-		internal    abstract    void    WriteClassInvokerHandle (ClassGen type,         StreamWriter sw,    string indent,  CodeGenerationOptions opt,  string  declaringType);
-		internal    abstract    void    WriteInterfaceInvokerHandle (InterfaceGen type, StreamWriter sw,    string indent,  CodeGenerationOptions opt,  string  declaringType);
+		internal    abstract    void    WriteClassInvokerHandle (ClassGen type,         TextWriter sw,    string indent,  CodeGenerationOptions opt,  string  declaringType);
+		internal    abstract    void    WriteInterfaceInvokerHandle (InterfaceGen type, TextWriter sw,    string indent,  CodeGenerationOptions opt,  string  declaringType);
 
-		internal    abstract    void    WriteConstructorIdField (Ctor ctor, StreamWriter sw,    string indent,  CodeGenerationOptions opt);
-		internal    abstract    void    WriteConstructorBody (Ctor ctor,    StreamWriter sw,    string indent,  CodeGenerationOptions opt, StringCollection call_cleanup);
+		internal    abstract    void    WriteConstructorIdField (Ctor ctor, TextWriter sw,    string indent,  CodeGenerationOptions opt);
+		internal    abstract    void    WriteConstructorBody (Ctor ctor,    TextWriter sw,    string indent,  CodeGenerationOptions opt, StringCollection call_cleanup);
 
-		internal    abstract    void    WriteMethodIdField (Method method,  StreamWriter sw,    string indent,  CodeGenerationOptions opt);
-		internal    abstract    void    WriteMethodBody (Method method,     StreamWriter sw,    string indent,  CodeGenerationOptions opt);
+		internal    abstract    void    WriteMethodIdField (Method method,  TextWriter sw,    string indent,  CodeGenerationOptions opt);
+		internal    abstract    void    WriteMethodBody (Method method,     TextWriter sw,    string indent,  CodeGenerationOptions opt);
 
-		internal    abstract    void    WriteFieldIdField (Field field,     StreamWriter sw,    string indent,  CodeGenerationOptions opt);
-		internal    abstract    void    WriteFieldGetBody (Field field,     StreamWriter sw,    string indent,  CodeGenerationOptions opt);
-		internal    abstract    void    WriteFieldSetBody (Field field,     StreamWriter sw,    string indent,  CodeGenerationOptions opt);
+		internal    abstract    void    WriteFieldIdField (Field field,     TextWriter sw,    string indent,  CodeGenerationOptions opt);
+		internal    abstract    void    WriteFieldGetBody (Field field,     TextWriter sw,    string indent,  CodeGenerationOptions opt);
+		internal    abstract    void    WriteFieldSetBody (Field field,     TextWriter sw,    string indent,  CodeGenerationOptions opt);
 	}
 }
 

@@ -74,7 +74,7 @@ namespace MonoDroid.Generation {
 			}
 		}
 
-		public void WriteCallArgs (StreamWriter sw, string indent, CodeGenerationOptions opt, bool invoker)
+		public void WriteCallArgs (TextWriter sw, string indent, CodeGenerationOptions opt, bool invoker)
 		{
 			if (items.Count == 0)
 				return;
