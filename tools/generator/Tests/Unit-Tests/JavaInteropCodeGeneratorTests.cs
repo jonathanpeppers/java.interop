@@ -3,10 +3,10 @@ using NUnit.Framework;
 using System.IO;
 using System.Text;
 
-namespace generatortests
+namespace generatortests.Unit_Tests
 {
 	[TestFixture]
-	public class XamarinAndroidCodeGeneratorTests
+	class JavaInteropCodeGeneratorTests
 	{
 		CodeGenerator generator;
 		StringBuilder builder;
@@ -19,22 +19,22 @@ namespace generatortests
 			builder = new StringBuilder ();
 			writer = new StringWriter (builder);
 			options = new CodeGenerationOptions {
-				CodeGenerationTarget = Xamarin.Android.Binder.CodeGenerationTarget.XamarinAndroid,
+				CodeGenerationTarget = Xamarin.Android.Binder.CodeGenerationTarget.JavaInterop1,
 			};
 			generator = options.CodeGenerator;
 		}
 
 		[Test]
-		public void WriteClassHandle()
+		public void WriteClassHandle ()
 		{
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
 
 			generator.WriteClassHandle (@class, writer, string.Empty, options, false);
 
-			Assert.AreEqual (@"	internal static IntPtr java_class_handle;
+			Assert.AreEqual (@"	internal            static  readonly    JniPeerMembers  _members    = new JniPeerMembers (""com/mypackage/foo"", typeof (foo));
 	internal static IntPtr class_ref {
 		get {
-			return JNIEnv.FindClass (""com/mypackage/foo"", ref java_class_handle);
+			return _members.JniPeerType.PeerReference.Handle;
 		}
 	}
 
@@ -48,8 +48,14 @@ namespace generatortests
 
 			generator.WriteClassInvokerHandle (@class, writer, string.Empty, options, "Com.MyPackage.Foo");
 
-			Assert.AreEqual (@"protected override global::System.Type ThresholdType {
-	get { return typeof (Com.MyPackage.Foo); }
+			Assert.AreEqual (@"internal    new     static  readonly    JniPeerMembers  _members    = new JniPeerMembers (""com/mypackage/foo"", typeof (Com.MyPackage.Foo));
+
+public override global::Java.Interop.JniPeerMembers JniPeerMembers {
+	get { return _members; }
+}
+
+protected override global::System.Type ThresholdType {
+	get { return _members.ManagedPeerType; }
 }
 
 ", builder.ToString ());
@@ -63,8 +69,8 @@ namespace generatortests
 
 			generator.WriteFieldIdField (field, writer, string.Empty, options);
 
-			Assert.AreEqual (@"static IntPtr bar_jfieldId;
-", builder.ToString ());
+			//NOTE: not needed for JavaInteropCodeGenerator
+			Assert.AreEqual ("", builder.ToString ());
 		}
 
 		[Test]
@@ -77,9 +83,10 @@ namespace generatortests
 			generator.WriteFieldGetBody (field, writer, string.Empty, options);
 			options.ContextTypes.Pop ();
 
-			Assert.AreEqual (@"if (bar_jfieldId == IntPtr.Zero)
-	bar_jfieldId = JNIEnv.GetFieldID (class_ref, ""bar"", ""foo"");
-return JNIEnv.GetFooField (((global::Java.Lang.Object) this).Handle, bar_jfieldId);
+			Assert.AreEqual (@"const string __id = ""bar.foo"";
+
+var __v = _members.InstanceFields.GetFooValue (__id, this);
+return __v;
 ", builder.ToString ());
 		}
 
@@ -93,11 +100,11 @@ return JNIEnv.GetFooField (((global::Java.Lang.Object) this).Handle, bar_jfieldI
 			generator.WriteFieldSetBody (field, writer, string.Empty, options);
 			options.ContextTypes.Pop ();
 
-			Assert.AreEqual (@"if (bar_jfieldId == IntPtr.Zero)
-	bar_jfieldId = JNIEnv.GetFieldID (class_ref, ""bar"", ""foo"");
+			Assert.AreEqual (@"const string __id = ""bar.foo"";
+
 IntPtr native_value = JNIEnv.NewString (value);
 try {
-	JNIEnv.SetField (((global::Java.Lang.Object) this).Handle, bar_jfieldId, native_value);
+	_members.InstanceFields.SetValue (__id, this, native_value);
 } finally {
 	JNIEnv.DeleteLocalRef (native_value);
 }
@@ -105,7 +112,7 @@ try {
 		}
 
 		[Test]
-		public void Field_Generate()
+		public void Field_Generate ()
 		{
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
 			var field = new TestField (@class, "bar");
@@ -114,22 +121,22 @@ try {
 			field.Generate (writer, string.Empty, options, @class);
 			options.ContextTypes.Pop ();
 
-			Assert.AreEqual (@"static IntPtr bar_jfieldId;
-
+			Assert.AreEqual (@"
 // Metadata.xml XPath field reference: path=""/api/package[@name='com.mypackage']/class[@name='foo']/field[@name='bar']""
 [Register (""bar"")]
 public foo bar {
 	get {
-		if (bar_jfieldId == IntPtr.Zero)
-			bar_jfieldId = JNIEnv.GetFieldID (class_ref, ""bar"", ""foo"");
-		return JNIEnv.GetFooField (((global::Java.Lang.Object) this).Handle, bar_jfieldId);
+		const string __id = ""bar.foo"";
+
+		var __v = _members.InstanceFields.GetFooValue (__id, this);
+		return __v;
 	}
 	set {
-		if (bar_jfieldId == IntPtr.Zero)
-			bar_jfieldId = JNIEnv.GetFieldID (class_ref, ""bar"", ""foo"");
+		const string __id = ""bar.foo"";
+
 		IntPtr native_value = JNIEnv.NewString (value);
 		try {
-			JNIEnv.SetField (((global::Java.Lang.Object) this).Handle, bar_jfieldId, native_value);
+			_members.InstanceFields.SetValue (__id, this, native_value);
 		} finally {
 			JNIEnv.DeleteLocalRef (native_value);
 		}

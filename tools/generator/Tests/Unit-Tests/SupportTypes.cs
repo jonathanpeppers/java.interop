@@ -11,7 +11,7 @@ namespace generatortests
 		{
 			this.baseType = baseType;
 
-			SymbolTable.AddType (Name, new SimpleSymbol (null, Name, Name, Name, Name));
+			SymbolTable.AddType (FullName, new SimpleSymbol (null, Name, Name, Name, Name));
 		}
 
 		public override bool IsAbstract => false;
@@ -81,7 +81,7 @@ namespace generatortests
 
 		public override bool IsEnumified => false;
 
-		public override string TypeName => type.Name;
+		public override string TypeName => type.FullName;
 
 		public override string Name { get; set; }
 
