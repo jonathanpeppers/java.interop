@@ -124,7 +124,7 @@ try {
 			var field = new TestField (@class, "bar");
 			field.Validate (options, new GenericParameterDefinitionList ());
 			options.ContextTypes.Push (@class);
-			field.Generate (writer, string.Empty, options, @class);
+			generator.WriteField (field, writer, string.Empty, options, @class);
 			options.ContextTypes.Pop ();
 
 			Assert.AreEqual (@"

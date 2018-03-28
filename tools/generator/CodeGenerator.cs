@@ -709,6 +709,41 @@ namespace MonoDroid.Generation {
 		internal    abstract    void    WriteFieldIdField (Field field,     TextWriter sw,    string indent,  CodeGenerationOptions opt);
 		internal    abstract    void    WriteFieldGetBody (Field field,     TextWriter sw,    string indent,  CodeGenerationOptions opt);
 		internal    abstract    void    WriteFieldSetBody (Field field,     TextWriter sw,    string indent,  CodeGenerationOptions opt);
+
+		public virtual void WriteField (Field field, TextWriter sw, string indent, CodeGenerationOptions opt, GenBase type)
+		{
+			if (field.IsEnumified)
+				sw.WriteLine ("[global::Android.Runtime.GeneratedEnum]");
+			if (field.NeedsProperty) {
+				string fieldType = field.Symbol.IsArray ? "IList<" + field.Symbol.ElementType + ">" : opt.GetOutputName (field.Symbol.FullName);
+				WriteFieldIdField (field, sw, indent, opt);
+				sw.WriteLine ();
+				sw.WriteLine ("{0}// Metadata.xml XPath field reference: path=\"{1}/field[@name='{2}']\"", indent, type.MetadataXPathReference, field.JavaName);
+				sw.WriteLine ("{0}[Register (\"{1}\"{2})]", indent, field.JavaName, field.AdditionalAttributeString ());
+				sw.WriteLine ("{0}{1} {2}{3} {4} {{", indent, field.Visibility, field.IsStatic ? "static " : String.Empty, fieldType, field.Name);
+				sw.WriteLine ("{0}\tget {{", indent);
+				WriteFieldGetBody (field, sw, indent + "\t\t", opt);
+				sw.WriteLine ("{0}\t}}", indent);
+
+				if (!field.IsConst) {
+					sw.WriteLine ("{0}\tset {{", indent);
+					WriteFieldSetBody (field, sw, indent + "\t\t", opt);
+					sw.WriteLine ("{0}\t}}", indent);
+				}
+				sw.WriteLine ("{0}}}", indent);
+			}
+			else {
+				sw.WriteLine ("{0}// Metadata.xml XPath field reference: path=\"{1}/field[@name='{2}']\"", indent, type.MetadataXPathReference, field.JavaName);
+				sw.WriteLine ("{0}[Register (\"{1}\"{2})]", indent, field.JavaName, field.AdditionalAttributeString ());
+				if (field.IsDeprecated)
+					sw.WriteLine ("{0}[Obsolete (\"{1}\")]", indent, field.DeprecatedComment);
+				if (field.Annotation != null)
+					sw.WriteLine ("{0}{1}", indent, field.Annotation);
+
+				// the Value complication is due to constant enum from negative integer value (C# compiler requires explicit parenthesis).
+				sw.WriteLine ("{0}{1} const {2} {3} = ({2}) {4};", indent, field.Visibility, opt.GetOutputName (field.Symbol.FullName), field.Name, field.Value.Contains ('-') && field.Symbol.FullName.Contains ('.') ? '(' + field.Value + ')' : field.Value);
+			}
+		}
 	}
 }
 
