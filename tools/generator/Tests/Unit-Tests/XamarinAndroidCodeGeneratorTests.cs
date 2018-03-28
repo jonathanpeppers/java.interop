@@ -101,5 +101,39 @@ try {
 }
 ", builder.ToString ());
 		}
+
+		[Test]
+		public void Field_Generate()
+		{
+			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
+			var field = new TestField (@class, "bar");
+			field.Validate (options, new GenericParameterDefinitionList ());
+			options.ContextTypes.Push (@class);
+			field.Generate (writer, string.Empty, options, @class);
+			options.ContextTypes.Pop ();
+
+			Assert.AreEqual (@"static IntPtr bar_jfieldId;
+
+// Metadata.xml XPath field reference: path=""/api/package[@name='com.mypackage']/class[@name='foo']/field[@name='bar']""
+[Register (""bar"")]
+public foo bar {
+	get {
+		if (bar_jfieldId == IntPtr.Zero)
+			bar_jfieldId = JNIEnv.GetFieldID (class_ref, ""bar"", ""foo"");
+		return JNIEnv.GetFooField (((global::Java.Lang.Object) this).Handle, bar_jfieldId);
+	}
+	set {
+		if (bar_jfieldId == IntPtr.Zero)
+			bar_jfieldId = JNIEnv.GetFieldID (class_ref, ""bar"", ""foo"");
+		IntPtr native_value = JNIEnv.NewString (value);
+		try {
+			JNIEnv.SetField (((global::Java.Lang.Object) this).Handle, bar_jfieldId, native_value);
+		} finally {
+			JNIEnv.DeleteLocalRef (native_value);
+		}
+	}
+}
+", builder.ToString ());
+		}
 	}
 }

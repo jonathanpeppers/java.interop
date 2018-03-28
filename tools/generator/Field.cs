@@ -234,7 +234,7 @@ namespace MonoDroid.Generation {
 
 		public string Annotation { get; internal set; }
 
-		void GenerateProperty (StreamWriter sw, string indent, CodeGenerationOptions opt, GenBase gen)
+		void GenerateProperty (TextWriter sw, string indent, CodeGenerationOptions opt, GenBase gen)
 		{
 			string type = Symbol.IsArray ? "IList<" + Symbol.ElementType + ">" : opt.GetOutputName (Symbol.FullName);
 			opt.CodeGenerator.WriteFieldIdField (this, sw, indent, opt);
@@ -254,7 +254,7 @@ namespace MonoDroid.Generation {
 			sw.WriteLine ("{0}}}", indent);
 		}
 
-		public void Generate (StreamWriter sw, string indent, CodeGenerationOptions opt, GenBase type)
+		public void Generate (TextWriter sw, string indent, CodeGenerationOptions opt, GenBase type)
 		{
 			if (IsEnumified)
 				sw.WriteLine ("[global::Android.Runtime.GeneratedEnum]");
