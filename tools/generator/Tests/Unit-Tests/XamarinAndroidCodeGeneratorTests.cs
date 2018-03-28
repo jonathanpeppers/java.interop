@@ -24,6 +24,12 @@ namespace generatortests
 			generator = options.CodeGenerator;
 		}
 
+		[TearDown]
+		public void TearDown ()
+		{
+			writer.Dispose ();
+		}
+
 		[Test]
 		public void WriteClassHandle()
 		{
