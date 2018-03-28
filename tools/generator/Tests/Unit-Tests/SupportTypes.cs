@@ -10,8 +10,6 @@ namespace generatortests
 		public TestClass (string baseType, string javaName) : base (new TestBaseSupport (javaName))
 		{
 			this.baseType = baseType;
-
-			SymbolTable.AddType (FullName, new SimpleSymbol (null, Name, Name, Name, Name));
 		}
 
 		public override bool IsAbstract => false;
@@ -61,9 +59,9 @@ namespace generatortests
 
 	class TestField : Field
 	{
-		TestClass type;
+		string type;
 
-		public TestField (TestClass type, string name)
+		public TestField (string type, string name)
 		{
 			this.type = type;
 			Name = name;
@@ -81,7 +79,7 @@ namespace generatortests
 
 		public override bool IsEnumified => false;
 
-		public override string TypeName => type.FullName;
+		public override string TypeName => type;
 
 		public override string Name { get; set; }
 

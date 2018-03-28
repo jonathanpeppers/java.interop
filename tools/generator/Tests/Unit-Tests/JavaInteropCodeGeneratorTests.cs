@@ -70,8 +70,7 @@ protected override global::System.Type ThresholdType {
 		[Test]
 		public void WriteFieldIdField ()
 		{
-			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
-			var field = new TestField (@class, "bar");
+			var field = new TestField ("java.lang.String", "bar");
 
 			generator.WriteFieldIdField (field, writer, string.Empty, options);
 
@@ -83,14 +82,14 @@ protected override global::System.Type ThresholdType {
 		public void WriteFieldGetBody ()
 		{
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
-			var field = new TestField (@class, "bar");
+			var field = new TestField ("java.lang.String", "bar");
 			field.Validate (options, new GenericParameterDefinitionList ());
 			generator.WriteFieldGetBody (field, writer, string.Empty, options, @class);
 
-			Assert.AreEqual (@"const string __id = ""bar.foo"";
+			Assert.AreEqual (@"const string __id = ""bar.Ljava/lang/String;"";
 
-var __v = _members.InstanceFields.GetFooValue (__id, this);
-return __v;
+var __v = _members.InstanceFields.GetObjectValue (__id, this);
+return JNIEnv.GetString (__v.Handle, JniHandleOwnership.TransferLocalRef);
 ", builder.ToString ());
 		}
 
@@ -98,15 +97,15 @@ return __v;
 		public void WriteFieldSetBody ()
 		{
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
-			var field = new TestField (@class, "bar");
+			var field = new TestField ("java.lang.String", "bar");
 			field.Validate (options, new GenericParameterDefinitionList ());
 			generator.WriteFieldSetBody (field, writer, string.Empty, options, @class);
 
-			Assert.AreEqual (@"const string __id = ""bar.foo"";
+			Assert.AreEqual (@"const string __id = ""bar.Ljava/lang/String;"";
 
 IntPtr native_value = JNIEnv.NewString (value);
 try {
-	_members.InstanceFields.SetValue (__id, this, native_value);
+	_members.InstanceFields.SetValue (__id, this, new JniObjectReference (native_value));
 } finally {
 	JNIEnv.DeleteLocalRef (native_value);
 }
@@ -117,26 +116,26 @@ try {
 		public void WriteField ()
 		{
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
-			var field = new TestField (@class, "bar");
+			var field = new TestField ("java.lang.String", "bar");
 			field.Validate (options, new GenericParameterDefinitionList ());
 			generator.WriteField (field, writer, string.Empty, options, @class);
 
 			Assert.AreEqual (@"
 // Metadata.xml XPath field reference: path=""/api/package[@name='com.mypackage']/class[@name='foo']/field[@name='bar']""
 [Register (""bar"")]
-public foo bar {
+public string bar {
 	get {
-		const string __id = ""bar.foo"";
+		const string __id = ""bar.Ljava/lang/String;"";
 
-		var __v = _members.InstanceFields.GetFooValue (__id, this);
-		return __v;
+		var __v = _members.InstanceFields.GetObjectValue (__id, this);
+		return JNIEnv.GetString (__v.Handle, JniHandleOwnership.TransferLocalRef);
 	}
 	set {
-		const string __id = ""bar.foo"";
+		const string __id = ""bar.Ljava/lang/String;"";
 
 		IntPtr native_value = JNIEnv.NewString (value);
 		try {
-			_members.InstanceFields.SetValue (__id, this, native_value);
+			_members.InstanceFields.SetValue (__id, this, new JniObjectReference (native_value));
 		} finally {
 			JNIEnv.DeleteLocalRef (native_value);
 		}

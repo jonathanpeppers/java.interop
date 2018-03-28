@@ -64,8 +64,7 @@ namespace generatortests
 		[Test]
 		public void WriteFieldIdField ()
 		{
-			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
-			var field = new TestField (@class, "bar");
+			var field = new TestField ("java.lang.String", "bar");
 
 			generator.WriteFieldIdField (field, writer, string.Empty, options);
 
@@ -77,13 +76,14 @@ namespace generatortests
 		public void WriteFieldGetBody ()
 		{
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
-			var field = new TestField (@class, "bar");
+			var field = new TestField ("java.lang.String", "bar");
 			field.Validate (options, new GenericParameterDefinitionList ());
 			generator.WriteFieldGetBody (field, writer, string.Empty, options, @class);
 
 			Assert.AreEqual (@"if (bar_jfieldId == IntPtr.Zero)
-	bar_jfieldId = JNIEnv.GetFieldID (class_ref, ""bar"", ""foo"");
-return JNIEnv.GetFooField (((global::Java.Lang.Object) this).Handle, bar_jfieldId);
+	bar_jfieldId = JNIEnv.GetFieldID (class_ref, ""bar"", ""Ljava/lang/String;"");
+IntPtr __ret = JNIEnv.GetObjectField (((global::Java.Lang.Object) this).Handle, bar_jfieldId);
+return JNIEnv.GetString (__ret, JniHandleOwnership.TransferLocalRef);
 ", builder.ToString ());
 		}
 
@@ -91,12 +91,12 @@ return JNIEnv.GetFooField (((global::Java.Lang.Object) this).Handle, bar_jfieldI
 		public void WriteFieldSetBody ()
 		{
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
-			var field = new TestField (@class, "bar");
+			var field = new TestField ("java.lang.String", "bar");
 			field.Validate (options, new GenericParameterDefinitionList ());
 			generator.WriteFieldSetBody (field, writer, string.Empty, options, @class);
 
 			Assert.AreEqual (@"if (bar_jfieldId == IntPtr.Zero)
-	bar_jfieldId = JNIEnv.GetFieldID (class_ref, ""bar"", ""foo"");
+	bar_jfieldId = JNIEnv.GetFieldID (class_ref, ""bar"", ""Ljava/lang/String;"");
 IntPtr native_value = JNIEnv.NewString (value);
 try {
 	JNIEnv.SetField (((global::Java.Lang.Object) this).Handle, bar_jfieldId, native_value);
@@ -110,7 +110,7 @@ try {
 		public void WriteField ()
 		{
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
-			var field = new TestField (@class, "bar");
+			var field = new TestField ("java.lang.String", "bar");
 			field.Validate (options, new GenericParameterDefinitionList ());
 			generator.WriteField (field, writer, string.Empty, options, @class);
 
@@ -118,15 +118,16 @@ try {
 
 // Metadata.xml XPath field reference: path=""/api/package[@name='com.mypackage']/class[@name='foo']/field[@name='bar']""
 [Register (""bar"")]
-public foo bar {
+public string bar {
 	get {
 		if (bar_jfieldId == IntPtr.Zero)
-			bar_jfieldId = JNIEnv.GetFieldID (class_ref, ""bar"", ""foo"");
-		return JNIEnv.GetFooField (((global::Java.Lang.Object) this).Handle, bar_jfieldId);
+			bar_jfieldId = JNIEnv.GetFieldID (class_ref, ""bar"", ""Ljava/lang/String;"");
+		IntPtr __ret = JNIEnv.GetObjectField (((global::Java.Lang.Object) this).Handle, bar_jfieldId);
+		return JNIEnv.GetString (__ret, JniHandleOwnership.TransferLocalRef);
 	}
 	set {
 		if (bar_jfieldId == IntPtr.Zero)
-			bar_jfieldId = JNIEnv.GetFieldID (class_ref, ""bar"", ""foo"");
+			bar_jfieldId = JNIEnv.GetFieldID (class_ref, ""bar"", ""Ljava/lang/String;"");
 		IntPtr native_value = JNIEnv.NewString (value);
 		try {
 			JNIEnv.SetField (((global::Java.Lang.Object) this).Handle, bar_jfieldId, native_value);
