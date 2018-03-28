@@ -83,7 +83,7 @@ protected override global::System.Type ThresholdType {
 		{
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
 			var field = new TestField ("java.lang.String", "bar");
-			field.Validate (options, new GenericParameterDefinitionList ());
+			Assert.IsTrue (field.Validate (options, new GenericParameterDefinitionList ()), "field.Validate failed!");
 			generator.WriteFieldGetBody (field, writer, string.Empty, options, @class);
 
 			Assert.AreEqual (@"const string __id = ""bar.Ljava/lang/String;"";
@@ -98,7 +98,7 @@ return JNIEnv.GetString (__v.Handle, JniHandleOwnership.TransferLocalRef);
 		{
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
 			var field = new TestField ("java.lang.String", "bar");
-			field.Validate (options, new GenericParameterDefinitionList ());
+			Assert.IsTrue (field.Validate (options, new GenericParameterDefinitionList ()), "field.Validate failed!");
 			generator.WriteFieldSetBody (field, writer, string.Empty, options, @class);
 
 			Assert.AreEqual (@"const string __id = ""bar.Ljava/lang/String;"";
@@ -117,7 +117,7 @@ try {
 		{
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
 			var field = new TestField ("java.lang.String", "bar");
-			field.Validate (options, new GenericParameterDefinitionList ());
+			Assert.IsTrue (field.Validate (options, new GenericParameterDefinitionList ()), "field.Validate failed!");
 			generator.WriteField (field, writer, string.Empty, options, @class);
 
 			Assert.AreEqual (@"

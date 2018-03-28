@@ -77,7 +77,7 @@ namespace generatortests
 		{
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
 			var field = new TestField ("java.lang.String", "bar");
-			field.Validate (options, new GenericParameterDefinitionList ());
+			Assert.IsTrue (field.Validate (options, new GenericParameterDefinitionList ()), "field.Validate failed!");
 			generator.WriteFieldGetBody (field, writer, string.Empty, options, @class);
 
 			Assert.AreEqual (@"if (bar_jfieldId == IntPtr.Zero)
@@ -92,7 +92,7 @@ return JNIEnv.GetString (__ret, JniHandleOwnership.TransferLocalRef);
 		{
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
 			var field = new TestField ("java.lang.String", "bar");
-			field.Validate (options, new GenericParameterDefinitionList ());
+			Assert.IsTrue (field.Validate (options, new GenericParameterDefinitionList ()), "field.Validate failed!");
 			generator.WriteFieldSetBody (field, writer, string.Empty, options, @class);
 
 			Assert.AreEqual (@"if (bar_jfieldId == IntPtr.Zero)
@@ -111,7 +111,7 @@ try {
 		{
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
 			var field = new TestField ("java.lang.String", "bar");
-			field.Validate (options, new GenericParameterDefinitionList ());
+			Assert.IsTrue (field.Validate (options, new GenericParameterDefinitionList ()), "field.Validate failed!");
 			generator.WriteField (field, writer, string.Empty, options, @class);
 
 			Assert.AreEqual (@"static IntPtr bar_jfieldId;
