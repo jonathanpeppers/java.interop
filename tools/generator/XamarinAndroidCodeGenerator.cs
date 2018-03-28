@@ -176,7 +176,7 @@ namespace MonoDroid.Generation {
 			sw.WriteLine ("{0}static IntPtr {1};", indent, field.ID);
 		}
 
-		internal override void WriteFieldGetBody (Field field, TextWriter sw, string indent, CodeGenerationOptions opt)
+		internal override void WriteFieldGetBody (Field field, TextWriter sw, string indent, CodeGenerationOptions opt, GenBase type)
 		{
 			sw.WriteLine ("{0}if ({1} == IntPtr.Zero)", indent, field.ID);
 			sw.WriteLine ("{0}\t{1} = JNIEnv.Get{2}FieldID (class_ref, \"{3}\", \"{4}\");", indent, field.ID, field.IsStatic ? "Static" : String.Empty, field.JavaName, field.Symbol.JniName);
@@ -187,7 +187,7 @@ namespace MonoDroid.Generation {
 					field.GetMethodPrefix,
 					field.IsStatic
 						? "class_ref"
-						: opt.ContextType.GetObjectHandleProperty ("this"),
+						: type.GetObjectHandleProperty ("this"),
 					field.ID);
 
 			//var asym = Symbol as ArraySymbol;
@@ -202,7 +202,7 @@ namespace MonoDroid.Generation {
 			}
 		}
 
-		internal override void WriteFieldSetBody (Field field, TextWriter sw, string indent, CodeGenerationOptions opt)
+		internal override void WriteFieldSetBody (Field field, TextWriter sw, string indent, CodeGenerationOptions opt, GenBase type)
 		{
 			sw.WriteLine ("{0}if ({1} == IntPtr.Zero)", indent, field.ID);
 			sw.WriteLine ("{0}\t{1} = JNIEnv.Get{2}FieldID (class_ref, \"{3}\", \"{4}\");", indent, field.ID, field.IsStatic ? "Static" : String.Empty, field.JavaName, field.Symbol.JniName);
@@ -234,7 +234,7 @@ namespace MonoDroid.Generation {
 						: String.Empty,
 					field.IsStatic
 						? "class_ref"
-						: opt.ContextType.GetObjectHandleProperty ("this"),
+						: type.GetObjectHandleProperty ("this"),
 					field.ID,
 					arg);
 

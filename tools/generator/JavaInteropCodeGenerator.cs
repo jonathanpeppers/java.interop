@@ -191,7 +191,7 @@ namespace MonoDroid.Generation {
 			// No field id_ field required
 		}
 
-		internal override void WriteFieldGetBody (Field field, TextWriter sw, string indent, CodeGenerationOptions opt)
+		internal override void WriteFieldGetBody (Field field, TextWriter sw, string indent, CodeGenerationOptions opt, GenBase type)
 		{
 			sw.WriteLine ("{0}const string __id = \"{1}.{2}\";", indent, field.JavaName, field.Symbol.JniName);
 			sw.WriteLine ();
@@ -219,7 +219,7 @@ namespace MonoDroid.Generation {
 			}
 		}
 
-		internal override void WriteFieldSetBody (Field field, TextWriter sw, string indent, CodeGenerationOptions opt)
+		internal override void WriteFieldSetBody (Field field, TextWriter sw, string indent, CodeGenerationOptions opt, GenBase type)
 		{
 			sw.WriteLine ("{0}const string __id = \"{1}.{2}\";", indent, field.JavaName, field.Symbol.JniName);
 			sw.WriteLine ();

@@ -79,9 +79,7 @@ namespace generatortests
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
 			var field = new TestField (@class, "bar");
 			field.Validate (options, new GenericParameterDefinitionList ());
-			options.ContextTypes.Push (@class);
-			generator.WriteFieldGetBody (field, writer, string.Empty, options);
-			options.ContextTypes.Pop ();
+			generator.WriteFieldGetBody (field, writer, string.Empty, options, @class);
 
 			Assert.AreEqual (@"if (bar_jfieldId == IntPtr.Zero)
 	bar_jfieldId = JNIEnv.GetFieldID (class_ref, ""bar"", ""foo"");
@@ -95,9 +93,7 @@ return JNIEnv.GetFooField (((global::Java.Lang.Object) this).Handle, bar_jfieldI
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
 			var field = new TestField (@class, "bar");
 			field.Validate (options, new GenericParameterDefinitionList ());
-			options.ContextTypes.Push (@class);
-			generator.WriteFieldSetBody (field, writer, string.Empty, options);
-			options.ContextTypes.Pop ();
+			generator.WriteFieldSetBody (field, writer, string.Empty, options, @class);
 
 			Assert.AreEqual (@"if (bar_jfieldId == IntPtr.Zero)
 	bar_jfieldId = JNIEnv.GetFieldID (class_ref, ""bar"", ""foo"");
@@ -111,14 +107,12 @@ try {
 		}
 
 		[Test]
-		public void Field_Generate()
+		public void WriteField ()
 		{
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
 			var field = new TestField (@class, "bar");
 			field.Validate (options, new GenericParameterDefinitionList ());
-			options.ContextTypes.Push (@class);
 			generator.WriteField (field, writer, string.Empty, options, @class);
-			options.ContextTypes.Pop ();
 
 			Assert.AreEqual (@"static IntPtr bar_jfieldId;
 

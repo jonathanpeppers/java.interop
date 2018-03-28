@@ -85,9 +85,7 @@ protected override global::System.Type ThresholdType {
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
 			var field = new TestField (@class, "bar");
 			field.Validate (options, new GenericParameterDefinitionList ());
-			options.ContextTypes.Push (@class);
-			generator.WriteFieldGetBody (field, writer, string.Empty, options);
-			options.ContextTypes.Pop ();
+			generator.WriteFieldGetBody (field, writer, string.Empty, options, @class);
 
 			Assert.AreEqual (@"const string __id = ""bar.foo"";
 
@@ -102,9 +100,7 @@ return __v;
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
 			var field = new TestField (@class, "bar");
 			field.Validate (options, new GenericParameterDefinitionList ());
-			options.ContextTypes.Push (@class);
-			generator.WriteFieldSetBody (field, writer, string.Empty, options);
-			options.ContextTypes.Pop ();
+			generator.WriteFieldSetBody (field, writer, string.Empty, options, @class);
 
 			Assert.AreEqual (@"const string __id = ""bar.foo"";
 
@@ -118,14 +114,12 @@ try {
 		}
 
 		[Test]
-		public void Field_Generate ()
+		public void WriteField ()
 		{
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
 			var field = new TestField (@class, "bar");
 			field.Validate (options, new GenericParameterDefinitionList ());
-			options.ContextTypes.Push (@class);
 			generator.WriteField (field, writer, string.Empty, options, @class);
-			options.ContextTypes.Pop ();
 
 			Assert.AreEqual (@"
 // Metadata.xml XPath field reference: path=""/api/package[@name='com.mypackage']/class[@name='foo']/field[@name='bar']""

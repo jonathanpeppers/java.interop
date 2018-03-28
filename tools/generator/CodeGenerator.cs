@@ -707,10 +707,10 @@ namespace MonoDroid.Generation {
 		internal    abstract    void    WriteMethodBody (Method method,     TextWriter sw,    string indent,  CodeGenerationOptions opt);
 
 		internal    abstract    void    WriteFieldIdField (Field field,     TextWriter sw,    string indent,  CodeGenerationOptions opt);
-		internal    abstract    void    WriteFieldGetBody (Field field,     TextWriter sw,    string indent,  CodeGenerationOptions opt);
-		internal    abstract    void    WriteFieldSetBody (Field field,     TextWriter sw,    string indent,  CodeGenerationOptions opt);
+		internal    abstract    void    WriteFieldGetBody (Field field,     TextWriter sw,    string indent,  CodeGenerationOptions opt, GenBase type);
+		internal    abstract    void    WriteFieldSetBody (Field field,     TextWriter sw,    string indent,  CodeGenerationOptions opt, GenBase type);
 
-		public virtual void WriteField (Field field, TextWriter sw, string indent, CodeGenerationOptions opt, GenBase type)
+		internal    virtual     void    WriteField (Field field, TextWriter sw, string indent, CodeGenerationOptions opt, GenBase type)
 		{
 			if (field.IsEnumified)
 				sw.WriteLine ("[global::Android.Runtime.GeneratedEnum]");
@@ -722,12 +722,12 @@ namespace MonoDroid.Generation {
 				sw.WriteLine ("{0}[Register (\"{1}\"{2})]", indent, field.JavaName, field.AdditionalAttributeString ());
 				sw.WriteLine ("{0}{1} {2}{3} {4} {{", indent, field.Visibility, field.IsStatic ? "static " : String.Empty, fieldType, field.Name);
 				sw.WriteLine ("{0}\tget {{", indent);
-				WriteFieldGetBody (field, sw, indent + "\t\t", opt);
+				WriteFieldGetBody (field, sw, indent + "\t\t", opt, type);
 				sw.WriteLine ("{0}\t}}", indent);
 
 				if (!field.IsConst) {
 					sw.WriteLine ("{0}\tset {{", indent);
-					WriteFieldSetBody (field, sw, indent + "\t\t", opt);
+					WriteFieldSetBody (field, sw, indent + "\t\t", opt, type);
 					sw.WriteLine ("{0}\t}}", indent);
 				}
 				sw.WriteLine ("{0}}}", indent);
