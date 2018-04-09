@@ -67,6 +67,12 @@
     <Compile Include="Integration-Tests\CSharpKeywords.cs" />
     <Compile Include="Integration-Tests\GenericArguments.cs" />
     <Compile Include="Integration-Tests\InterfaceMethodsConflict.cs" />
+    <Compile Include="SupportFiles\Java_Lang_ICharSequence.cs" />
+    <Compile Include="SupportFiles\Java_Lang_Object.cs" />
+    <Compile Include="SupportFiles\Java_Lang_String.cs" />
+    <Compile Include="SupportFiles\JavaObject.cs" />
+    <Compile Include="SupportFiles\JniHandleOwnership.cs" />
+    <Compile Include="SupportFiles\IJavaObject.cs" />
     <Compile Include="SupportFiles\RegisterAttribute.cs" />
     <Compile Include="Unit-Tests\JavaInteropCodeGeneratorTests.cs" />
     <Compile Include="Unit-Tests\ManagedTests.cs" />
@@ -79,6 +85,14 @@
     <ProjectReference Include="..\generator.csproj">
       <Project>{D14A1B5C-2060-4930-92BE-F7190256C735}</Project>
       <Name>generator</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\src\Java.Interop\Java.Interop.csproj">
+      <Project>{94BD81F7-B06F-4295-9636-F8A3B6BDC762}</Project>
+      <Name>Java.Interop</Name>
+    </ProjectReference>
+        <ProjectReference Include="..\..\..\src\Java.Interop.Tools.Cecil\Java.Interop.Tools.Cecil.csproj">
+      <Project>{D48EE8D0-0A0A-4493-AEF5-DAF5F8CF86AD}</Project>
+      <Name>Java.Interop.Tools.Cecil</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\..\src\Xamarin.Android.Tools.ApiXmlAdjuster\Xamarin.Android.Tools.ApiXmlAdjuster.csproj">
       <Project>{1268EADF-8344-431C-81F6-FCB7CBC99F49}</Project>

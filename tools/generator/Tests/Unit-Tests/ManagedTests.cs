@@ -1,14 +1,17 @@
 ﻿using Android.Runtime;
+using Java.Interop.Tools.Cecil;
 using Mono.Cecil;
 using MonoDroid.Generation;
 using NUnit.Framework;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 
 namespace Com.Mypackage
 {
 	[Register ("com/mypackage/foo")]
-	public class Foo
+	public class Foo : Java.Lang.Object
 	{
 		[Register ("foo", "()V", "")]
 		public Foo () { }
@@ -32,29 +35,50 @@ namespace generatortests
 	[TestFixture]
 	public class ManagedTests
 	{
-		string tempFile;
-		ModuleDefinition module;
+		static Stream stream;
+		static DirectoryAssemblyResolver resolver;
+		static ModuleDefinition module;
 
-		[SetUp]
-		public void SetUp ()
+		[OneTimeSetUp]
+		public static void SetUp ()
 		{
-			tempFile = Path.GetTempFileName ();
-			File.Copy (GetType ().Assembly.Location, tempFile, true);
-			module = ModuleDefinition.ReadModule (tempFile);
+			var assemblyLocation = typeof (ManagedTests).Assembly.Location;
+
+			stream = new MemoryStream ();
+			using (var file = File.OpenRead (assemblyLocation)) {
+				file.CopyTo (stream);
+			}
+			stream.Seek (0, SeekOrigin.Begin);
+
+			resolver = new DirectoryAssemblyResolver ((TraceLevel level, string message) => { }, false);
+			resolver.SearchDirectories.Add (Path.GetDirectoryName (assemblyLocation));
+			resolver.SearchDirectories.Add (Path.GetDirectoryName (Assembly.Load ("mscorlib").Location));
+
+			module = ModuleDefinition.ReadModule (stream, new ReaderParameters {
+				AssemblyResolver = resolver,
+			});
+
+			foreach (var @class in module.Types) {
+				if (@class.Namespace == "Java.Lang") {
+					SymbolTable.AddType (new ManagedClassGen (@class));
+				}
+			}
 		}
 
-		[TearDown]
-		public void TearDown ()
+		[OneTimeTearDown]
+		public static void TearDown ()
 		{
 			module.Dispose ();
-			if (File.Exists (tempFile))
-				File.Delete (tempFile);
+			resolver.Dispose ();
+			stream.Dispose ();
 		}
 
 		[Test]
 		public void Class ()
 		{
 			var @class = new ManagedClassGen (module.GetType ("Com.Mypackage.Foo"));
+			Assert.IsTrue (@class.Validate (new CodeGenerationOptions (), new GenericParameterDefinitionList ()), "class.Validate failed!");
+
 			Assert.AreEqual ("public", @class.Visibility);
 			Assert.AreEqual ("Foo", @class.Name);
 			Assert.AreEqual ("com.mypackage.foo", @class.JavaName);

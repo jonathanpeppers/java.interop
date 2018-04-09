@@ -12,7 +12,6 @@ namespace generatortests
 	{
 		XDocument xml;
 		XElement package;
-		List<XmlClassGen> javaLangClasses;
 
 		[SetUp]
 		public void SetUp ()
@@ -26,7 +25,8 @@ namespace generatortests
 		</class>
 	</package>
 	<package name=""com.mypackage"">
-		<class abstract=""false"" deprecated=""not deprecated"" final=""false"" name=""foo"" static=""false"" visibility=""public"">
+		<class abstract=""false"" deprecated=""not deprecated"" extends=""java.lang.Object"" extends-generic-aware=""java.lang.Object""
+				final=""false"" name=""foo"" static=""false"" visibility=""public"">
 			<constructor deprecated=""not deprecated"" final=""false"" name=""foo"" static=""false"" visibility=""public"" />
 			<method abstract=""false"" deprecated=""not deprecated"" final=""false"" name=""bar"" native=""false"" return=""void"" static=""false"" synchronized=""false"" visibility=""public"" managedReturn=""System.Void"" />
 			<method abstract=""false"" deprecated=""not deprecated"" final=""false"" name=""barWithParams"" native=""false"" return=""java.lang.String"" static=""false"" synchronized=""false"" visibility=""public"" managedReturn=""System.String"">
@@ -44,9 +44,8 @@ namespace generatortests
 
 			//Configure java.lang package
 			var javaLang = xml.Element ("api").Element ("package");
-			javaLangClasses = new List<XmlClassGen> ();
 			foreach (var @class in javaLang.Elements("class")) {
-				javaLangClasses.Add (new XmlClassGen (javaLang, @class));
+				SymbolTable.AddType (new XmlClassGen (javaLang, @class));
 			}
 
 			package = (XElement)javaLang.NextNode;
@@ -57,6 +56,8 @@ namespace generatortests
 		{
 			var element = package.Element ("class");
 			var @class = new XmlClassGen (package, element);
+			Assert.IsTrue (@class.Validate (new CodeGenerationOptions (), new GenericParameterDefinitionList ()), "class.Validate failed!");
+
 			Assert.AreEqual ("public", @class.Visibility);
 			Assert.AreEqual ("Foo", @class.Name);
 			Assert.AreEqual ("com.mypackage.foo", @class.JavaName);
