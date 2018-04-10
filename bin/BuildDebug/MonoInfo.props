@@ -1,0 +1,13 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Choose>
+    <When Condition=" '$(MonoFrameworkPath)' == '' ">
+      <PropertyGroup>
+        <MonoFrameworkPath>&quot;C:\Program Files (x86)\Mono\lib\mono-2.0-sgen.lib&quot;</MonoFrameworkPath>
+        <MonoLibs         >-L &quot;C:\Program Files (x86)\Mono\lib&quot; -lmonosgen-2.0</MonoLibs>
+      </PropertyGroup>
+      <ItemGroup>
+        <MonoIncludePath Include="C:\Program Files (x86)\Mono\include\mono-2.0" />
+      </ItemGroup>
+    </When>
+  </Choose>
+</Project>

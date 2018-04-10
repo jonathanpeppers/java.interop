@@ -52,6 +52,7 @@
       BuildJni_c;
       BuildMac;
       BuildUnixLibraries;
+      BuildWindowsLibraries;
       $(BuildDependsOn)
     </BuildDependsOn>
   </PropertyGroup>
@@ -118,13 +119,25 @@
     <MakeDir Directories="obj" />
     <Exec Command="gcc -g -shared -std=c99 -D_GNU_SOURCE -D_POSIX_C_SOURCE=200809L -o $(OutputPath)\lib$(OutputName).so $(_CppFlags) $(_LinkFlags) $(_Libs) $(_Includes) $(_Files)" />
   </Target>
+  <Target Name="BuildWindowsLibraries">
+    <PropertyGroup>
+      <_FixedDefines>$(DefineSymbols.Split(' '))</_FixedDefines>
+    </PropertyGroup>
+    <ItemGroup>
+      <_Defines Include="$(_FixedDefines)" />
+    </ItemGroup>
+    <PropertyGroup>
+      <_CppFlags>@(_Defines -&gt; '-D%(Identity)', ' ')</_CppFlags>
+      <_FixedDefines>$(DefineSymbols.Split(' '))</_FixedDefines>
+      <_Includes>@(MonoIncludePath-&gt;'-I &quot;%(Identity)&quot;', ' ') @(JdkIncludePath-&gt;'-I &quot;%(Identity)&quot;', ' ')</_Includes>
+      <_Files>@(Compile -&gt; '%(Identity)', ' ')</_Files>
+    </PropertyGroup>
+    <Exec Command="&quot;C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Tools\ClangC2\14.10.25903\bin\HostX86\clang.exe&quot; -o $(OutputPath)\$(OutputName).dll -m32 $(_CppFlags) $(_LinkFlags) $(_Libs) $(_Includes) $(_Files)" />
+  </Target>
   <Target Name="Clean">
     <RemoveDir Directories="obj" />
     <Delete Files="jni.c" />
-    <Delete
-        Files="$(OutputPath)\lib$(OutputName).dylib"
-        Condition=" '$(OS)' != 'Windows_NT' "
-    />
+    <Delete Files="$(OutputPath)\*$(OutputName)*" />
   </Target>
   <ItemGroup>
     <ProjectReference Include="..\..\build-tools\jnienv-gen\jnienv-gen.csproj">
