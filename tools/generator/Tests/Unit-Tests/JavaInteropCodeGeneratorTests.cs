@@ -51,7 +51,7 @@ protected override global::System.Type ThresholdType {
 		{
 			var field = new TestField ("java.lang.String", "bar");
 
-			generator.WriteFieldIdField (field, writer, string.Empty, options);
+			generator.Fields.WriteIdField (field, writer, string.Empty, options);
 
 			//NOTE: not needed for JavaInteropCodeGenerator
 			Assert.AreEqual ("", builder.ToString ());
@@ -63,7 +63,7 @@ protected override global::System.Type ThresholdType {
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
 			var field = new TestField ("java.lang.String", "bar");
 			Assert.IsTrue (field.Validate (options, new GenericParameterDefinitionList ()), "field.Validate failed!");
-			generator.WriteFieldGetBody (field, writer, string.Empty, options, @class);
+			generator.Fields.WriteGetBody (field, writer, string.Empty, options, @class);
 
 			Assert.AreEqual (@"const string __id = ""bar.Ljava/lang/String;"";
 
@@ -78,7 +78,7 @@ return JNIEnv.GetString (__v.Handle, JniHandleOwnership.TransferLocalRef);
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
 			var field = new TestField ("java.lang.String", "bar");
 			Assert.IsTrue (field.Validate (options, new GenericParameterDefinitionList ()), "field.Validate failed!");
-			generator.WriteFieldSetBody (field, writer, string.Empty, options, @class);
+			generator.Fields.WriteSetBody (field, writer, string.Empty, options, @class);
 
 			Assert.AreEqual (@"const string __id = ""bar.Ljava/lang/String;"";
 
@@ -97,7 +97,7 @@ try {
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
 			var field = new TestField ("java.lang.String", "bar");
 			Assert.IsTrue (field.Validate (options, new GenericParameterDefinitionList ()), "field.Validate failed!");
-			generator.WriteField (field, writer, string.Empty, options, @class);
+			generator.Fields.Write (field, writer, string.Empty, options, @class);
 
 			Assert.AreEqual (@"
 // Metadata.xml XPath field reference: path=""/api/package[@name='com.mypackage']/class[@name='foo']/field[@name='bar']""
@@ -129,7 +129,7 @@ public string bar {
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
 			var field = new TestField ("int", "bar");
 			Assert.IsTrue (field.Validate (options, new GenericParameterDefinitionList ()), "field.Validate failed!");
-			generator.WriteField (field, writer, string.Empty, options, @class);
+			generator.Fields.Write (field, writer, string.Empty, options, @class);
 
 			Assert.AreEqual (@"
 // Metadata.xml XPath field reference: path=""/api/package[@name='com.mypackage']/class[@name='foo']/field[@name='bar']""
@@ -154,12 +154,44 @@ public int bar {
 		}
 
 		[Test]
+		public void WriteIntArrayField ()
+		{
+			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
+			var field = new TestField ("int[]", "bar");
+			Assert.IsTrue (field.Validate (options, new GenericParameterDefinitionList ()), "field.Validate failed!");
+			generator.Fields.Write (field, writer, string.Empty, options, @class);
+
+			Assert.AreEqual (@"
+// Metadata.xml XPath field reference: path=""/api/package[@name='com.mypackage']/class[@name='foo']/field[@name='bar']""
+[Register (""bar"")]
+public IList<int> bar {
+	get {
+		const string __id = ""bar.[I"";
+
+		var __v = _members.InstanceFields.GetObjectValue (__id, this);
+		return global::Android.Runtime.JavaArray<int>.FromJniHandle (__v.Handle, JniHandleOwnership.TransferLocalRef);
+	}
+	set {
+		const string __id = ""bar.[I"";
+
+		IntPtr native_value = global::Android.Runtime.JavaArray<int>.ToLocalJniHandle (value);
+		try {
+			_members.InstanceFields.SetValue (__id, this, new JniObjectReference (native_value));
+		} finally {
+			global::Android.Runtime.JNIEnv.DeleteLocalRef (native_value);
+		}
+	}
+}
+", builder.ToString ());
+		}
+
+		[Test]
 		public void WriteConstantField ()
 		{
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
 			var field = new TestField ("java.lang.String", "bar").SetConstant ();
 			Assert.IsTrue (field.Validate (options, new GenericParameterDefinitionList ()), "field.Validate failed!");
-			generator.WriteField (field, writer, string.Empty, options, @class);
+			generator.Fields.Write (field, writer, string.Empty, options, @class);
 
 			Assert.AreEqual (@"
 // Metadata.xml XPath field reference: path=""/api/package[@name='com.mypackage']/class[@name='foo']/field[@name='bar']""
@@ -181,7 +213,7 @@ public static string bar {
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
 			var field = new TestField ("java.lang.String", "bar").SetConstant ("\"hello\"");
 			Assert.IsTrue (field.Validate (options, new GenericParameterDefinitionList ()), "field.Validate failed!");
-			generator.WriteField (field, writer, string.Empty, options, @class);
+			generator.Fields.Write (field, writer, string.Empty, options, @class);
 
 			Assert.AreEqual (@"// Metadata.xml XPath field reference: path=""/api/package[@name='com.mypackage']/class[@name='foo']/field[@name='bar']""
 [Register (""bar"")]
@@ -195,7 +227,7 @@ public const string bar = (string) ""hello"";
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
 			var field = new TestField ("int", "bar").SetConstant ("1234");
 			Assert.IsTrue (field.Validate (options, new GenericParameterDefinitionList ()), "field.Validate failed!");
-			generator.WriteField (field, writer, string.Empty, options, @class);
+			generator.Fields.Write (field, writer, string.Empty, options, @class);
 
 			Assert.AreEqual (@"// Metadata.xml XPath field reference: path=""/api/package[@name='com.mypackage']/class[@name='foo']/field[@name='bar']""
 [Register (""bar"")]

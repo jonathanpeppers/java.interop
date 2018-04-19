@@ -37,7 +37,7 @@ namespace generatortests
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
 			var field = new TestField ("int", "bar").SetEnumified ();
 			Assert.IsTrue (field.Validate (options, new GenericParameterDefinitionList ()), "field.Validate failed!");
-			generator.WriteField (field, writer, string.Empty, options, @class);
+			generator.Fields.Write (field, writer, string.Empty, options, @class);
 
 			StringAssert.Contains ("[global::Android.Runtime.GeneratedEnum]", builder.ToString (), "Should contain GeneratedEnumAttribute!");
 		}
@@ -49,7 +49,7 @@ namespace generatortests
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
 			var field = new TestField ("int", "bar").SetConstant ("1234").SetDeprecated (comment);
 			Assert.IsTrue (field.Validate (options, new GenericParameterDefinitionList ()), "field.Validate failed!");
-			generator.WriteField (field, writer, string.Empty, options, @class);
+			generator.Fields.Write (field, writer, string.Empty, options, @class);
 
 			StringAssert.Contains ($"[Obsolete (\"{comment}\")]", builder.ToString (), "Should contain ObsoleteAttribute!");
 		}
@@ -60,9 +60,21 @@ namespace generatortests
 			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
 			var field = new TestField ("int", "bar").SetVisibility ("protected");
 			Assert.IsTrue (field.Validate (options, new GenericParameterDefinitionList ()), "field.Validate failed!");
-			generator.WriteField (field, writer, string.Empty, options, @class);
+			generator.Fields.Write (field, writer, string.Empty, options, @class);
 
 			StringAssert.Contains ("protected int bar {", builder.ToString (), "Property should be protected!");
+		}
+
+		[Test]
+		public void WriteAnnotatedField ()
+		{
+			var @class = new TestClass ("java.lang.Object", "com.mypackage.foo");
+			var field = new TestField ("int", "bar").SetConstant ("1234");
+			field.Annotation = "[global::Android.Runtime.RequiresPermission (\"android.permission.INTERNET\")]";
+			Assert.IsTrue (field.Validate (options, new GenericParameterDefinitionList ()), "field.Validate failed!");
+			generator.Fields.Write (field, writer, string.Empty, options, @class);
+
+			StringAssert.Contains (field.Annotation, builder.ToString (), $"Field should have '{field.Annotation}'!");
 		}
 
 		[Test]

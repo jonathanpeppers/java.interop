@@ -1,9 +1,94 @@
 ﻿using System;
 using System.IO;
 
-namespace MonoDroid.Generation {
+namespace MonoDroid.Generation
+{
+	class JavaInteropCodeGenerator : CodeGenerator
+	{
+		internal override FieldGenerator Fields { get; } = new JavaInteropFieldGenerator ();
 
-	class JavaInteropCodeGenerator : CodeGenerator {
+		class JavaInteropFieldGenerator : FieldGenerator
+		{
+			internal override void WriteIdField (Field field, TextWriter writer, string indent, CodeGenerationOptions opt)
+			{
+				// No field id_ field required
+			}
+
+			internal override void WriteGetBody (Field field, TextWriter writer, string indent, CodeGenerationOptions opt, GenBase type)
+			{
+				writer.WriteLine ("{0}const string __id = \"{1}.{2}\";", indent, field.JavaName, field.Symbol.JniName);
+				writer.WriteLine ();
+
+				var invokeType = GetInvokeType (field.GetMethodPrefix);
+				var indirect = field.IsStatic ? "StaticFields" : "InstanceFields";
+				var invoke = "Get{0}Value";
+				invoke = string.Format (invoke, invokeType);
+
+				writer.WriteLine ("{0}var __v = _members.{1}.{2} (__id{3});",
+						indent,
+						indirect,
+						invoke,
+						field.IsStatic ? "" : ", this");
+
+				if (field.Symbol.IsArray) {
+					writer.WriteLine ("{0}return global::Android.Runtime.JavaArray<{1}>.FromJniHandle (__v.Handle, JniHandleOwnership.TransferLocalRef);", indent, opt.GetOutputName (field.Symbol.ElementType));
+				} else if (field.Symbol.NativeType != field.Symbol.FullName) {
+					writer.WriteLine ("{0}return {1};",
+							indent,
+							field.Symbol.FromNative (opt, invokeType != "Object" ? "__v" : "__v.Handle", true));
+				} else {
+					writer.WriteLine ("{0}return __v;", indent);
+				}
+			}
+
+			internal override void WriteSetBody (Field field, TextWriter writer, string indent, CodeGenerationOptions opt, GenBase type)
+			{
+				writer.WriteLine ("{0}const string __id = \"{1}.{2}\";", indent, field.JavaName, field.Symbol.JniName);
+				writer.WriteLine ();
+
+				var invokeType = GetInvokeType (field.GetMethodPrefix);
+				var indirect = field.IsStatic ? "StaticFields" : "InstanceFields";
+
+				string arg;
+				bool have_prep = false;
+				if (field.Symbol.IsArray) {
+					arg = opt.GetSafeIdentifier (SymbolTable.GetNativeName ("value"));
+					writer.WriteLine ("{0}IntPtr {1} = global::Android.Runtime.JavaArray<{2}>.ToLocalJniHandle (value);", indent, arg, opt.GetOutputName (field.Symbol.ElementType));
+				} else {
+					foreach (string prep in field.SetParameters.GetCallPrep (opt)) {
+						have_prep = true;
+						writer.WriteLine ("{0}{1}", indent, prep);
+					}
+
+					arg = field.SetParameters [0].ToNative (opt);
+					if (field.SetParameters.HasCleanup && !have_prep) {
+						arg = opt.GetSafeIdentifier (SymbolTable.GetNativeName ("value"));
+						writer.WriteLine ("{0}IntPtr {1} = global::Android.Runtime.JNIEnv.ToLocalJniHandle (value);", indent, arg);
+					}
+				}
+
+				writer.WriteLine ("{0}try {{", indent);
+
+				writer.WriteLine ("{0}\t_members.{1}.SetValue (__id{2}, {3});",
+						indent,
+						indirect,
+						field.IsStatic ? "" : ", this",
+						invokeType != "Object" ? arg : "new JniObjectReference (" + arg + ")");
+
+				writer.WriteLine ("{0}}} finally {{", indent);
+				if (field.Symbol.IsArray) {
+					writer.WriteLine ("{0}\tglobal::Android.Runtime.JNIEnv.DeleteLocalRef ({1});", indent, arg);
+
+				} else {
+					foreach (string cleanup in field.SetParameters.GetCallCleanup (opt))
+						writer.WriteLine ("{0}\t{1}", indent, cleanup);
+					if (field.SetParameters.HasCleanup && !have_prep) {
+						writer.WriteLine ("{0}\tglobal::Android.Runtime.JNIEnv.DeleteLocalRef ({1});", indent, arg);
+					}
+				}
+				writer.WriteLine ("{0}}}", indent);
+			}
+		}
 
 		static string GetInvokeType (string type)
 		{
@@ -183,87 +268,6 @@ namespace MonoDroid.Generation {
 			writer.WriteLine ("{0}}} finally {{", indent);
 			foreach (string cleanup in method.Parameters.GetCallCleanup (opt))
 				writer.WriteLine ("{0}\t{1}", indent, cleanup);
-			writer.WriteLine ("{0}}}", indent);
-		}
-
-		internal override void WriteFieldIdField (Field field, TextWriter writer, string indent, CodeGenerationOptions opt)
-		{
-			// No field id_ field required
-		}
-
-		internal override void WriteFieldGetBody (Field field, TextWriter writer, string indent, CodeGenerationOptions opt, GenBase type)
-		{
-			writer.WriteLine ("{0}const string __id = \"{1}.{2}\";", indent, field.JavaName, field.Symbol.JniName);
-			writer.WriteLine ();
-
-			var invokeType  = GetInvokeType (field.GetMethodPrefix);
-			var indirect    = field.IsStatic ? "StaticFields" : "InstanceFields";
-			var invoke      = "Get{0}Value";
-			invoke          = string.Format (invoke, invokeType);
-
-			writer.WriteLine ("{0}var __v = _members.{1}.{2} (__id{3});",
-					indent,
-					indirect,
-					invoke,
-					field.IsStatic ? "" : ", this");
-
-			if (field.Symbol.IsArray) {
-				writer.WriteLine ("{0}return global::Android.Runtime.JavaArray<{1}>.FromJniHandle (__v.Handle, JniHandleOwnership.TransferLocalRef);", indent, opt.GetOutputName (field.Symbol.ElementType));
-			}
-			else if (field.Symbol.NativeType != field.Symbol.FullName) {
-				writer.WriteLine ("{0}return {1};",
-						indent,
-						field.Symbol.FromNative (opt, invokeType != "Object" ? "__v" : "__v.Handle", true));
-			} else {
-				writer.WriteLine ("{0}return __v;", indent);
-			}
-		}
-
-		internal override void WriteFieldSetBody (Field field, TextWriter writer, string indent, CodeGenerationOptions opt, GenBase type)
-		{
-			writer.WriteLine ("{0}const string __id = \"{1}.{2}\";", indent, field.JavaName, field.Symbol.JniName);
-			writer.WriteLine ();
-
-			var invokeType  = GetInvokeType (field.GetMethodPrefix);
-			var indirect    = field.IsStatic ? "StaticFields" : "InstanceFields";
-
-			string arg;
-			bool have_prep = false;
-			if (field.Symbol.IsArray) {
-				arg = opt.GetSafeIdentifier (SymbolTable.GetNativeName ("value"));
-				writer.WriteLine ("{0}IntPtr {1} = global::Android.Runtime.JavaArray<{2}>.ToLocalJniHandle (value);", indent, arg, opt.GetOutputName (field.Symbol.ElementType));
-			} else {
-				foreach (string prep in field.SetParameters.GetCallPrep (opt)) {
-					have_prep = true;
-					writer.WriteLine ("{0}{1}", indent, prep);
-				}
-
-				arg = field.SetParameters [0].ToNative (opt);
-				if (field.SetParameters.HasCleanup && !have_prep) {
-					arg = opt.GetSafeIdentifier (SymbolTable.GetNativeName ("value"));
-					writer.WriteLine ("{0}IntPtr {1} = global::Android.Runtime.JNIEnv.ToLocalJniHandle (value);", indent, arg);
-				}
-			}
-
-			writer.WriteLine ("{0}try {{", indent);
-
-			writer.WriteLine ("{0}\t_members.{1}.SetValue (__id{2}, {3});",
-					indent,
-					indirect,
-					field.IsStatic ? "" : ", this",
-					invokeType != "Object" ? arg : "new JniObjectReference (" + arg + ")");
-
-			writer.WriteLine ("{0}}} finally {{", indent);
-			if (field.Symbol.IsArray) {
-				writer.WriteLine ("{0}\tglobal::Android.Runtime.JNIEnv.DeleteLocalRef ({1});", indent, arg);
-
-			} else {
-				foreach (string cleanup in field.SetParameters.GetCallCleanup (opt))
-					writer.WriteLine ("{0}\t{1}", indent, cleanup);
-				if (field.SetParameters.HasCleanup && !have_prep) {
-					writer.WriteLine ("{0}\tglobal::Android.Runtime.JNIEnv.DeleteLocalRef ({1});", indent, arg);
-				}
-			}
 			writer.WriteLine ("{0}}}", indent);
 		}
 	}

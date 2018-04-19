@@ -64,7 +64,8 @@
     <Compile Include="ArraySymbol.cs" />
     <Compile Include="CharSequenceSymbol.cs" />
     <Compile Include="ClassGen.cs" />
-    <Compile Include="CodeGenerator.cs" />
+    <Compile Include="CodeGenerators\CodeGenerator.cs" />
+    <Compile Include="CodeGenerators\FieldGenerator.cs" />
     <Compile Include="CollectionSymbol.cs" />
     <Compile Include="ColorSymbol.cs" />
     <Compile Include="Ctor.cs" />
@@ -85,7 +86,7 @@
     <Compile Include="InterfaceGen.cs" />
     <Compile Include="IRequireGenericMarshal.cs" />
     <Compile Include="ISymbol.cs" />
-    <Compile Include="JavaInteropCodeGenerator.cs" />
+    <Compile Include="CodeGenerators\JavaInteropCodeGenerator.cs" />
     <Compile Include="ManagedExtensions.cs" />
     <Compile Include="Method.cs" />
     <Compile Include="MethodBase.cs" />
@@ -102,8 +103,8 @@
     <Compile Include="StreamSymbol.cs" />
     <Compile Include="StringSymbol.cs" />
     <Compile Include="SymbolTable.cs" />
-    <Compile Include="XAJavaInteropCodeGenerator.cs" />
-    <Compile Include="XamarinAndroidCodeGenerator.cs" />
+    <Compile Include="CodeGenerators\XAJavaInteropCodeGenerator.cs" />
+    <Compile Include="CodeGenerators\XamarinAndroidCodeGenerator.cs" />
     <Compile Include="XmlExtensions.cs" />
     <Compile Include="XmlPullParserSymbol.cs" />
     <Compile Include="XmlResourceParserSymbol.cs" />

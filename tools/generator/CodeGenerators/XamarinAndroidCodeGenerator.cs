@@ -1,9 +1,94 @@
 ﻿using System;
 using System.IO;
 
-namespace MonoDroid.Generation {
+namespace MonoDroid.Generation
+{
+	class XamarinAndroidCodeGenerator : CodeGenerator
+	{
+		internal override FieldGenerator Fields { get; } = new XamarinAndroidFieldGenerator ();
 
-	class XamarinAndroidCodeGenerator : CodeGenerator {
+		class XamarinAndroidFieldGenerator : FieldGenerator
+		{
+			internal override void WriteIdField (Field field, TextWriter writer, string indent, CodeGenerationOptions opt)
+			{
+				writer.WriteLine ("{0}static IntPtr {1};", indent, field.ID);
+			}
+
+			internal override void WriteGetBody (Field field, TextWriter writer, string indent, CodeGenerationOptions opt, GenBase type)
+			{
+				writer.WriteLine ("{0}if ({1} == IntPtr.Zero)", indent, field.ID);
+				writer.WriteLine ("{0}\t{1} = JNIEnv.Get{2}FieldID (class_ref, \"{3}\", \"{4}\");", indent, field.ID, field.IsStatic ? "Static" : String.Empty, field.JavaName, field.Symbol.JniName);
+				string call = String.Format ("JNIEnv.Get{0}{1}Field ({2}, {3})",
+						field.IsStatic
+							? "Static"
+							: String.Empty,
+						field.GetMethodPrefix,
+						field.IsStatic
+							? "class_ref"
+							: type.GetObjectHandleProperty ("this"),
+						field.ID);
+
+				//var asym = Symbol as ArraySymbol;
+				if (field.Symbol.IsArray) {
+					writer.WriteLine ("{0}return global::Android.Runtime.JavaArray<{1}>.FromJniHandle ({2}, JniHandleOwnership.TransferLocalRef);", indent, opt.GetOutputName (field.Symbol.ElementType), call);
+				} else if (field.Symbol.NativeType != field.Symbol.FullName) {
+					writer.WriteLine ("{0}{1} __ret = {2};", indent, field.Symbol.NativeType, call);
+					writer.WriteLine ("{0}return {1};", indent, field.Symbol.FromNative (opt, "__ret", true));
+				} else {
+					writer.WriteLine ("{0}return {1};", indent, call);
+				}
+			}
+
+			internal override void WriteSetBody (Field field, TextWriter writer, string indent, CodeGenerationOptions opt, GenBase type)
+			{
+				writer.WriteLine ("{0}if ({1} == IntPtr.Zero)", indent, field.ID);
+				writer.WriteLine ("{0}\t{1} = JNIEnv.Get{2}FieldID (class_ref, \"{3}\", \"{4}\");", indent, field.ID, field.IsStatic ? "Static" : String.Empty, field.JavaName, field.Symbol.JniName);
+
+				string arg;
+				bool have_prep = false;
+				if (field.Symbol.IsArray) {
+					arg = opt.GetSafeIdentifier (SymbolTable.GetNativeName ("value"));
+					writer.WriteLine ("{0}IntPtr {1} = global::Android.Runtime.JavaArray<{2}>.ToLocalJniHandle (value);", indent, arg, opt.GetOutputName (field.Symbol.ElementType));
+				} else {
+					foreach (string prep in field.SetParameters.GetCallPrep (opt)) {
+						have_prep = true;
+						writer.WriteLine ("{0}{1}", indent, prep);
+					}
+
+					arg = field.SetParameters [0].ToNative (opt);
+					if (field.SetParameters.HasCleanup && !have_prep) {
+						arg = opt.GetSafeIdentifier (SymbolTable.GetNativeName ("value"));
+						writer.WriteLine ("{0}IntPtr {1} = JNIEnv.ToLocalJniHandle (value);", indent, arg);
+					}
+				}
+
+				writer.WriteLine ("{0}try {{", indent);
+
+				writer.WriteLine ("{0}\tJNIEnv.Set{1}Field ({2}, {3}, {4});",
+						indent,
+						field.IsStatic
+							? "Static"
+							: String.Empty,
+						field.IsStatic
+							? "class_ref"
+							: type.GetObjectHandleProperty ("this"),
+						field.ID,
+						arg);
+
+				writer.WriteLine ("{0}}} finally {{", indent);
+				if (field.Symbol.IsArray) {
+					writer.WriteLine ("{0}\tJNIEnv.DeleteLocalRef ({1});", indent, arg);
+
+				} else {
+					foreach (string cleanup in field.SetParameters.GetCallCleanup (opt))
+						writer.WriteLine ("{0}\t{1}", indent, cleanup);
+					if (field.SetParameters.HasCleanup && !have_prep) {
+						writer.WriteLine ("{0}\tJNIEnv.DeleteLocalRef ({1});", indent, arg);
+					}
+				}
+				writer.WriteLine ("{0}}}", indent);
+			}
+		}
 
 		internal override void WriteClassHandle (ClassGen type, TextWriter writer, string indent, CodeGenerationOptions opt, bool requireNew)
 		{
@@ -168,87 +253,6 @@ namespace MonoDroid.Generation {
 			writer.WriteLine ("{0}}} finally {{", indent);
 			foreach (string cleanup in method.Parameters.GetCallCleanup (opt))
 				writer.WriteLine ("{0}\t{1}", indent, cleanup);
-			writer.WriteLine ("{0}}}", indent);
-		}
-
-		internal override void WriteFieldIdField (Field field, TextWriter writer, string indent, CodeGenerationOptions opt)
-		{
-			writer.WriteLine ("{0}static IntPtr {1};", indent, field.ID);
-		}
-
-		internal override void WriteFieldGetBody (Field field, TextWriter writer, string indent, CodeGenerationOptions opt, GenBase type)
-		{
-			writer.WriteLine ("{0}if ({1} == IntPtr.Zero)", indent, field.ID);
-			writer.WriteLine ("{0}\t{1} = JNIEnv.Get{2}FieldID (class_ref, \"{3}\", \"{4}\");", indent, field.ID, field.IsStatic ? "Static" : String.Empty, field.JavaName, field.Symbol.JniName);
-			string call = String.Format ("JNIEnv.Get{0}{1}Field ({2}, {3})",
-					field.IsStatic
-						? "Static"
-						: String.Empty,
-					field.GetMethodPrefix,
-					field.IsStatic
-						? "class_ref"
-						: type.GetObjectHandleProperty ("this"),
-					field.ID);
-
-			//var asym = Symbol as ArraySymbol;
-			if (field.Symbol.IsArray) {
-				writer.WriteLine ("{0}return global::Android.Runtime.JavaArray<{1}>.FromJniHandle ({2}, JniHandleOwnership.TransferLocalRef);", indent, opt.GetOutputName (field.Symbol.ElementType), call);
-			}
-			else if (field.Symbol.NativeType != field.Symbol.FullName) {
-				writer.WriteLine ("{0}{1} __ret = {2};", indent, field.Symbol.NativeType, call);
-				writer.WriteLine ("{0}return {1};", indent, field.Symbol.FromNative (opt, "__ret", true));
-			} else {
-				writer.WriteLine ("{0}return {1};", indent, call);
-			}
-		}
-
-		internal override void WriteFieldSetBody (Field field, TextWriter writer, string indent, CodeGenerationOptions opt, GenBase type)
-		{
-			writer.WriteLine ("{0}if ({1} == IntPtr.Zero)", indent, field.ID);
-			writer.WriteLine ("{0}\t{1} = JNIEnv.Get{2}FieldID (class_ref, \"{3}\", \"{4}\");", indent, field.ID, field.IsStatic ? "Static" : String.Empty, field.JavaName, field.Symbol.JniName);
-
-			string arg;
-			bool have_prep = false;
-			if (field.Symbol.IsArray) {
-				arg = opt.GetSafeIdentifier (SymbolTable.GetNativeName ("value"));
-				writer.WriteLine ("{0}IntPtr {1} = global::Android.Runtime.JavaArray<{2}>.ToLocalJniHandle (value);", indent, arg, opt.GetOutputName (field.Symbol.ElementType));
-			} else {
-				foreach (string prep in field.SetParameters.GetCallPrep (opt)) {
-					have_prep = true;
-					writer.WriteLine ("{0}{1}", indent, prep);
-				}
-
-				arg = field.SetParameters [0].ToNative (opt);
-				if (field.SetParameters.HasCleanup && !have_prep) {
-					arg = opt.GetSafeIdentifier (SymbolTable.GetNativeName ("value"));
-					writer.WriteLine ("{0}IntPtr {1} = JNIEnv.ToLocalJniHandle (value);", indent, arg);
-				}
-			}
-
-			writer.WriteLine ("{0}try {{", indent);
-
-			writer.WriteLine ("{0}\tJNIEnv.Set{1}Field ({2}, {3}, {4});",
-					indent,
-					field.IsStatic
-						? "Static"
-						: String.Empty,
-					field.IsStatic
-						? "class_ref"
-						: type.GetObjectHandleProperty ("this"),
-					field.ID,
-					arg);
-
-			writer.WriteLine ("{0}}} finally {{", indent);
-			if (field.Symbol.IsArray) {
-				writer.WriteLine ("{0}\tJNIEnv.DeleteLocalRef ({1});", indent, arg);
-
-			} else {
-				foreach (string cleanup in field.SetParameters.GetCallCleanup (opt))
-					writer.WriteLine ("{0}\t{1}", indent, cleanup);
-				if (field.SetParameters.HasCleanup && !have_prep) {
-					writer.WriteLine ("{0}\tJNIEnv.DeleteLocalRef ({1});", indent, arg);
-				}
-			}
 			writer.WriteLine ("{0}}}", indent);
 		}
 	}
