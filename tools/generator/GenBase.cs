@@ -772,9 +772,9 @@ namespace MonoDroid.Generation {
 		
 		public void FixupMethodOverrides (CodeGenerationOptions opt)
 		{
-			foreach (Method m in methods.Where (m => !m.IsInterfaceDefaultMethod)) {
+			foreach (Method m in methods.Where (m => m.IsValid && !m.IsInterfaceDefaultMethod)) {
 				for (var bt = this.GetBaseGen (opt); bt != null; bt = bt.GetBaseGen (opt)) {
-					var bm = bt.Methods.FirstOrDefault (mm => mm.Name == m.Name && mm.Visibility == m.Visibility && ParameterList.Equals (mm.Parameters, m.Parameters));
+					var bm = bt.Methods.FirstOrDefault (mm => mm.IsValid && mm.Name == m.Name && mm.Visibility == m.Visibility && ParameterList.Equals (mm.Parameters, m.Parameters));
 					if (bm != null && bm.RetVal.FullName == m.RetVal.FullName) { // if return type is different, it could be still "new", not "override".
 						m.IsOverride = true;
 						break;
@@ -783,9 +783,9 @@ namespace MonoDroid.Generation {
 			}
 
 			// Interface default methods can be overriden. We want to process them differently.
-			foreach (Method m in methods.Where (m => m.IsInterfaceDefaultMethod)) {
+			foreach (Method m in methods.Where (m => m.IsValid && m.IsInterfaceDefaultMethod)) {
 				foreach (var bt in this.GetAllDerivedInterfaces ()) {
-					var bm = bt.Methods.FirstOrDefault (mm => mm.Name == m.Name && ParameterList.Equals (mm.Parameters, m.Parameters));
+					var bm = bt.Methods.FirstOrDefault (mm => mm.IsValid && mm.Name == m.Name && ParameterList.Equals (mm.Parameters, m.Parameters));
 					if (bm != null) {
 						m.IsInterfaceDefaultMethodOverride = true;
 						break;
@@ -979,7 +979,7 @@ namespace MonoDroid.Generation {
 
 		static string [] AutoDetectEnumifiedOverrideParameters (MethodBase method, CodeGenerationOptions opt)
 		{
-			if (method.Parameters.All (p => p.Type != "int"))
+			if (!method.IsValid || method.Parameters.All (p => p.Type != "int"))
 				return null;
 			var classes = method.DeclaringType.Ancestors ().Concat (method.DeclaringType.Descendants (opt.Gens));
 			classes = classes.Concat (classes.SelectMany(x => x.GetAllImplementedInterfaces ()));

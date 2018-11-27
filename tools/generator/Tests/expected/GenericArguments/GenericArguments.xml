@@ -66,4 +66,22 @@
       </method>
     </class>
   </package>
+  <package name="android.view">
+    <class abstract="false" deprecated="not deprecated" extends="java.lang.Object" extends-generic-aware="java.lang.Object" final="false" name="View" static="false" visibility="public">
+    </class>
+    <class abstract="false" deprecated="not deprecated" extends="java.lang.Object" extends-generic-aware="java.lang.Object" final="false" name="ViewOffsetBehavior" static="false" visibility="public">
+      <typeParameters>
+        <typeParameter name="V" classBound="android.view.View">
+          <genericConstraints>
+            <genericConstraint type="android.view.View"></genericConstraint>
+          </genericConstraints>
+        </typeParameter>
+      </typeParameters>
+      <method abstract="false" deprecated="not deprecated" final="false" name="layoutChild" jni-signature="(Landroid/view/View;Landroid/view/View;I)V" return="void" jni-return="V" static="false" synchronized="false" synthetic="false" visibility="public">
+        <parameter name="parent" type="android.view.View" jni-type="Landroid/view/View;"></parameter>
+        <parameter name="child" type="V" jni-type="TV;"></parameter>
+        <parameter name="layoutDirection" type="int" jni-type="I"></parameter>
+      </method>
+    </class>
+  </package>
 </api>
