@@ -82,11 +82,12 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 					continue;
 				if (!JavaNativeTypeManager.IsNonStaticInnerClass (nt))
 					continue;
-				children.Add (new JavaCallableWrapperGenerator (nt, JavaNativeTypeManager.ToJniName (type), log));
+				var child = new JavaCallableWrapperGenerator (nt, JavaNativeTypeManager.ToJniName (type), log);
+				children.Add (child);
 				if (nt.HasNestedTypes)
 					AddNestedTypes (nt);
+				HasExport |= child.HasExport;
 			}
-			HasExport |= children.Any (t => t.HasExport);
 		}
 
 		JavaCallableWrapperGenerator (TypeDefinition type, string outerType, Action<string, object[]> log)
@@ -116,12 +117,12 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 
 			foreach (MethodDefinition minfo in type.Methods.Where (m => !m.IsConstructor)) {
 				var baseRegisteredMethod = GetBaseRegisteredMethod (minfo);
-				if (baseRegisteredMethod != null)
+				if (baseRegisteredMethod != null) {
 					AddMethod (baseRegisteredMethod, minfo);
-				else if (GetExportFieldAttributes (minfo).Any ()) {
+				} else if (HasAttribute (ExportFieldAttributeName, minfo)) {
 					AddMethod (null, minfo);
 					HasExport = true;
-				} else if (GetExportAttributes (minfo).Any ()) {
+				} else if (HasAttribute (ExportAttributeName, minfo)) {
 					AddMethod (null, minfo);
 					HasExport = true;
 				}
@@ -137,7 +138,7 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 									r.FullName);
 						return d;
 					})
-					.Where (d => GetRegisterAttributes (d).Any ())
+					.Where (d => HasAttribute (RegisterAttributeName, d))
 					.SelectMany (d => d.Methods)) {
 				AddMethod (imethod, imethod);
 			}
@@ -147,7 +148,7 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 			};
 			foreach (var bt in type.GetBaseTypes ()) {
 				ctorTypes.Add (bt);
-				RegisterAttribute rattr = GetRegisterAttributes (bt).FirstOrDefault ();
+				RegisterAttribute rattr = GetFirstRegisterAttribute (bt);
 				if (rattr != null && rattr.DoNotGenerateAcw)
 					break;
 			}
@@ -155,15 +156,10 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 
 			var curCtors = new List<MethodDefinition> ();
 
-			foreach (MethodDefinition minfo in type.Methods.Where (m => m.IsConstructor)) {
-				if (GetExportAttributes (minfo).Any ()) {
-					if (minfo.IsStatic) {
-						// Diagnostic.Warning (log, "ExportAttribute does not work on static constructor");
-					}
-					else {
-						AddConstructor (minfo, ctorTypes [0], outerType, null, curCtors, false, true);
-						HasExport = true;
-					}
+			foreach (MethodDefinition minfo in type.Methods) {
+				if (minfo.IsConstructor && !minfo.IsStatic && HasAttribute (ExportAttributeName, minfo)) {
+					AddConstructor (minfo, ctorTypes [0], outerType, null, curCtors, false, true);
+					HasExport = true;
 				}
 			}
 
@@ -203,6 +199,8 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 			return null;
 		}
 
+		static readonly Regex doc_url_regex = new Regex (".+\\.(g|designer)\\..+", RegexOptions.Compiled);
+
 		static SequencePoint LookupSource (TypeDefinition type)
 		{
 			SequencePoint candidate = null;
@@ -215,7 +213,7 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 					if (seq == null)
 						continue;
 
-					if (Regex.IsMatch (seq.Document.Url, ".+\\.(g|designer)\\..+"))
+					if (doc_url_regex.IsMatch (seq.Document.Url))
 						break;
 					if (candidate == null || seq.StartLine < candidate.StartLine)
 						candidate = seq;
@@ -229,7 +227,7 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 		void AddConstructors (TypeDefinition type, string outerType, List<MethodDefinition> baseCtors, List<MethodDefinition> curCtors, bool onlyRegisteredOrExportedCtors)
 		{
 			foreach (MethodDefinition ctor in type.Methods.Where (m => m.IsConstructor && !m.IsStatic))
-				if (!GetExportAttributes (ctor).Any ())
+				if (!HasAttribute (ExportAttributeName, ctor))
 					AddConstructor (ctor, type, outerType, baseCtors, curCtors, onlyRegisteredOrExportedCtors, false);
 		}
 
@@ -240,17 +238,14 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 					return;
 				}
 
-				ExportAttribute eattr = GetExportAttributes (ctor).FirstOrDefault ();
+				ExportAttribute eattr = GetFirstExportAttribute (ctor);
 				if (eattr != null) {
-					if (!string.IsNullOrEmpty (eattr.Name)) {
-						// Diagnostic.Warning (log, "Use of ExportAttribute.Name property is invalid on constructors");
-					}
 					ctors.Add (new Signature (ctor, eattr));
 					curCtors.Add (ctor);
 					return;
 				}
 
-				RegisterAttribute rattr = GetRegisterAttributes (ctor).FirstOrDefault ();
+				RegisterAttribute rattr = GetFirstRegisterAttribute (ctor);
 				if (rattr != null) {
 					if (ctors.Any (c => c.JniSignature == rattr.Signature))
 						return;
@@ -288,10 +283,8 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 			while ((bmethod = method.GetBaseDefinition ()) != method) {
 				method = bmethod;
 
-				var attributes = method.GetCustomAttributes (typeof (RegisterAttribute));
-				if (attributes.Any ()) {
+				if (HasAttribute (RegisterAttributeName, method))
 					return method;
-				}
 			}
 			return null;
 		}
@@ -330,60 +323,84 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 			return new ExportFieldAttribute ((string) attr.ConstructorArguments [0].Value);
 		}
 
-		static IEnumerable<RegisterAttribute> GetRegisterAttributes (Mono.Cecil.ICustomAttributeProvider p)
+		static readonly string RegisterAttributeName    = typeof (RegisterAttribute).FullName;
+		static readonly string ExportAttributeName      = typeof (ExportAttribute).FullName;
+		static readonly string ExportFieldAttributeName = typeof (ExportFieldAttribute).FullName;
+
+		static RegisterAttribute GetFirstRegisterAttribute (Mono.Cecil.ICustomAttributeProvider p)
 		{
-			return GetAttributes<RegisterAttribute> (p, a => ToRegisterAttribute (a));
+			return GetFirstAttribute (RegisterAttributeName, p, a => ToRegisterAttribute (a));
 		}
 
-		static IEnumerable<ExportAttribute> GetExportAttributes (Mono.Cecil.IMemberDefinition p)
+		static ExportAttribute GetFirstExportAttribute (IMemberDefinition p)
 		{
-			return GetAttributes<ExportAttribute> (p, a => ToExportAttribute (a, p));
+			return GetFirstAttribute (ExportAttributeName, p, a => ToExportAttribute (a, p));
 		}
 
-		static IEnumerable<ExportFieldAttribute> GetExportFieldAttributes (Mono.Cecil.ICustomAttributeProvider p)
+		static TAttribute GetFirstAttribute<TAttribute> (string typeName, Mono.Cecil.ICustomAttributeProvider p, Func<CustomAttribute, TAttribute> selector)
 		{
-			return GetAttributes<ExportFieldAttribute> (p, a => ToExportFieldAttribute (a));
+			foreach (var attribute in p.CustomAttributes) {
+				if (attribute.AttributeType.FullName == typeName)
+					return selector (attribute);
+			}
+			return default (TAttribute);
 		}
 
-		static IEnumerable<TAttribute> GetAttributes<TAttribute> (Mono.Cecil.ICustomAttributeProvider p, Func<CustomAttribute, TAttribute> selector)
+		static bool HasAttribute (string typeName, Mono.Cecil.ICustomAttributeProvider p)
 		{
-			return p.GetCustomAttributes (typeof (TAttribute))
-				.Select (selector);
+			foreach (var attribute in p.CustomAttributes) {
+				if (attribute.AttributeType.FullName == typeName)
+					return true;
+			}
+			return false;
 		}
 
 		void AddMethod (MethodDefinition registeredMethod, MethodDefinition implementedMethod)
 		{
-			if (registeredMethod != null)
-				foreach (RegisterAttribute attr in GetRegisterAttributes (registeredMethod)) {
-					var msig = new Signature (implementedMethod, attr);
-					if (!registeredMethod.IsConstructor && !methods.Any (m => m.Name == msig.Name && m.Params == msig.Params))
-						methods.Add (msig);
-				}
-			foreach (ExportAttribute attr in GetExportAttributes (implementedMethod)) {
-				if (type.HasGenericParameters)
-					Diagnostic.Error (4206, LookupSource (implementedMethod), "[Export] cannot be used on a generic type.");
+			if (registeredMethod != null) {
+				foreach (var attr in registeredMethod.CustomAttributes) {
+					if (attr.AttributeType.FullName == RegisterAttributeName) {
+						var register = ToRegisterAttribute (attr);
 
-				var msig = new Signature (implementedMethod, attr);
-				if (!string.IsNullOrEmpty (attr.SuperArgumentsString)) {
-					// Diagnostic.Warning (log, "Use of ExportAttribute.SuperArgumentsString property is invalid on methods");
+						var msig = new Signature (implementedMethod, register);
+						if (!registeredMethod.IsConstructor && !methods.Any (m => m.Name == msig.Name && m.Params == msig.Params)) {
+							methods.Add (msig);
+						}
+					}
 				}
-				if (!implementedMethod.IsConstructor && !methods.Any (m => m.Name == msig.Name && m.Params == msig.Params))
-					methods.Add (msig);
 			}
-			foreach (ExportFieldAttribute attr in GetExportFieldAttributes (implementedMethod)) {
-				if (type.HasGenericParameters)
-					Diagnostic.Error (4207, LookupSource (implementedMethod), "[ExportField] cannot be used on a generic type.");
+			foreach (var attr in implementedMethod.CustomAttributes) {
+				var typeName = attr.AttributeType.FullName;
+				if (typeName == ExportAttributeName) {
+					var export = ToExportAttribute (attr, implementedMethod);
 
-				var msig = new Signature (implementedMethod, attr);
-				if (!implementedMethod.IsConstructor && !methods.Any (m => m.Name == msig.Name && m.Params == msig.Params)) {
-					methods.Add (msig);
-					exported_fields.Add (new JavaFieldInfo (implementedMethod, attr.Name));
+					if (type.HasGenericParameters)
+						Diagnostic.Error (4206, LookupSource (implementedMethod), "[Export] cannot be used on a generic type.");
+
+					var msig = new Signature (implementedMethod, export);
+					if (!implementedMethod.IsConstructor && !methods.Any (m => m.Name == msig.Name && m.Params == msig.Params)) {
+						methods.Add (msig);
+					}
+				} else if (typeName == ExportFieldAttributeName) {
+					var export = ToExportFieldAttribute (attr);
+
+					if (type.HasGenericParameters)
+						Diagnostic.Error (4207, LookupSource (implementedMethod), "[ExportField] cannot be used on a generic type.");
+
+					var msig = new Signature (implementedMethod, export);
+					if (!implementedMethod.IsConstructor && !methods.Any (m => m.Name == msig.Name && m.Params == msig.Params)) {
+						methods.Add (msig);
+						exported_fields.Add (new JavaFieldInfo (implementedMethod, export.Name));
+					}
 				}
 			}
 		}
 
 		string GetManagedParameters (MethodDefinition ctor, string outerType)
 		{
+			if (ctor.Parameters.Count == 0)
+				return string.Empty;
+
 			StringBuilder sb = new StringBuilder ();
 			foreach (ParameterDefinition pdef in ctor.Parameters) {
 				if (sb.Length > 0)
@@ -542,12 +559,10 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 			sw.Write ("\t\tmono.android.IGCUserPeer");
 			IEnumerable<TypeDefinition> ifaces = type.Interfaces.Select (ifaceInfo => ifaceInfo.InterfaceType)
 				.Select (r => r.Resolve ())
-				.Where (d => GetRegisterAttributes (d).Any ());
-			if (ifaces.Any ()) {
-				foreach (TypeDefinition iface in ifaces) {
-					sw.WriteLine (",");
-					sw.Write ("\t\t{0}", GetJavaTypeName (iface));
-				}
+				.Where (d => HasAttribute (RegisterAttributeName, d));
+			foreach (TypeDefinition iface in ifaces) {
+				sw.WriteLine (",");
+				sw.Write ("\t\t{0}", GetJavaTypeName (iface));
 			}
 			sw.WriteLine ();
 			sw.WriteLine ("{");
