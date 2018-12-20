@@ -7,9 +7,7 @@ using System.Text;
 using Android.Runtime;
 
 #if HAVE_SRM
-using Mono.Cecil;
-using Java.Interop.Tools.Cecil;
-using Java.Interop.Tools.JavaCallableWrappers;
+using System.Reflection.Metadata;
 #endif  // HAVE_SRM
 
 namespace Java.Interop.Tools.TypeNameMappings
@@ -364,7 +362,7 @@ namespace Java.Interop.Tools.TypeNameMappings
 
 #if HAVE_SRM
 
-		internal static ExportParameterKind GetExportKind (Mono.Cecil.ICustomAttributeProvider p)
+		internal static ExportParameterKind GetExportKind (MetadataReader reader)
 		{
 			foreach (CustomAttribute a in p.GetCustomAttributes (typeof (ExportParameterAttribute)))
 				return ToExportParameterAttribute (a).Kind;

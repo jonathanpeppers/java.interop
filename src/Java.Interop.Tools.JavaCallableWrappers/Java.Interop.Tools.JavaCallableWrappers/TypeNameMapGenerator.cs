@@ -3,11 +3,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Utils;
 using System.Text;
 
-using Mono.Cecil;
-
-using Java.Interop.Tools.Cecil;
 using Java.Interop.Tools.TypeNameMappings;
 
 namespace Java.Interop.Tools.JavaCallableWrappers {
@@ -55,11 +54,10 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 	 * The rows MUST be sorted so that strcmp(3) can be used to compare keys
 	 * values between rows
 	 */
-	public class TypeNameMapGenerator : IDisposable {
+	public class TypeNameMapGenerator {
 
 		Action<TraceLevel, string>      Log;
-		List<TypeDefinition>            Types;
-		DirectoryAssemblyResolver       Resolver;
+		List<TypeDefinitionAndAssembly> Types;
 		JavaTypeScanner                 Scanner;
 
 		[Obsolete ("Use TypeNameMapGenerator(IEnumerable<string>, Action<TraceLevel, string>)")]
@@ -79,35 +77,28 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 
 			Log             = logger;
 			var Assemblies  = assemblies.ToList ();
-			var rp          = new ReaderParameters ();
 
-			Resolver = new DirectoryAssemblyResolver (Log, loadDebugSymbols: true, loadReaderParameters: rp);
 			foreach (var assembly in Assemblies) {
 				var directory   = Path.GetDirectoryName (assembly);
 				if (string.IsNullOrEmpty (directory))
 					continue;
-				if (!Resolver.SearchDirectories.Contains (directory))
-					Resolver.SearchDirectories.Add (directory);
-			}
-			foreach (var assembly in Assemblies) {
-				Resolver.Load (Path.GetFullPath (assembly));
 			}
 
 			Scanner     = new JavaTypeScanner (Log) {
 				ErrorOnCustomJavaObject     = false,
 			};
-			Types       = Scanner.GetJavaTypes (Assemblies, Resolver);
+			Types       = Scanner.GetJavaTypes (Assemblies);
 		}
 
 		[Obsolete ("Use TypeNameMapGenerator(IEnumerable<TypeDefinition>, Action<TraceLevel, string>)")]
-		public TypeNameMapGenerator (IEnumerable<TypeDefinition> types, Action<string, object[]> logMessage)
+		public TypeNameMapGenerator (IEnumerable<TypeDefinitionAndAssembly> types, Action<string, object[]> logMessage)
 			: this (types, (TraceLevel level, string value) => logMessage?.Invoke ("{0}", new [] { value }))
 		{
 			if (logMessage == null)
 				throw new ArgumentNullException (nameof (logMessage));
 		}
 
-		public TypeNameMapGenerator (IEnumerable<TypeDefinition> types, Action<TraceLevel, string> logger)
+		public TypeNameMapGenerator (IEnumerable<TypeDefinitionAndAssembly> types, Action<TraceLevel, string> logger)
 		{
 			if (types == null)
 				throw new ArgumentNullException ("types");
@@ -118,37 +109,22 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 			Types       = types.ToList ();
 		}
 
-		public void Dispose ()
-		{
-			Dispose (true);
-			GC.SuppressFinalize (this);
-		}
-
-		protected virtual void Dispose (bool disposing)
-		{
-			if (!disposing || Resolver == null)
-				return;
-
-			Resolver.Dispose ();
-			Resolver = null;
-		}
-
 		public void WriteJavaToManaged (Stream output)
 		{
 			if (output == null)
 				throw new ArgumentNullException ("output");
 
 			var typeMap = GetTypeMapping (
-					t => t.IsInterface || t.HasGenericParameters,
-					JavaNativeTypeManager.ToJniName,
-					t => t.GetPartialAssemblyQualifiedName ());
+					t => t.Type.IsInterface () || t.Type.HasGenericParameters (),
+					t => JavaNativeTypeManager.ToJniName (t.Type),
+					t => t.Assembly.Name);
 
 			WriteBinaryMapping (output, typeMap);
 		}
 
-		Dictionary<string, string> GetTypeMapping (Func<TypeDefinition, bool> skipType, Func<TypeDefinition, string> key, Func<TypeDefinition, string> value)
+		Dictionary<string, string> GetTypeMapping (Func<TypeDefinitionAndAssembly, bool> skipType, Func<TypeDefinitionAndAssembly, string> key, Func<TypeDefinitionAndAssembly, string> value)
 		{
-			var typeMap     = new Dictionary<string, TypeDefinition> ();
+			var typeMap     = new Dictionary<string, TypeDefinitionAndAssembly> ();
 			var aliases     = new Dictionary<string, List<string>> ();
 			foreach (var type in Types) {
 				if (skipType (type))
@@ -156,21 +132,26 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 
 				var k = key (type);
 
-				TypeDefinition e;
-				if (!typeMap.TryGetValue (k, out e)) {
+				TypeDefinitionAndAssembly existing;
+				if (!typeMap.TryGetValue (k, out existing)) {
 					typeMap.Add (k, type);
-				} else if (type.IsAbstract || type.IsInterface || e.IsAbstract || e.IsInterface) {
+					continue;
+				}
+
+				var typeDef = type.Type;
+				var existingDef = existing.Type;
+				if (typeDef.IsAbstract () || typeDef.IsInterface () || existingDef.IsAbstract () || existingDef.IsInterface ()) {
 					// Two separate types w/ the same key; a JavaToManaged issue.
 					// Prefer the base (abstract?) class over the invoker.
-					var b = e;
-					if (type.IsAssignableFrom (e))
+					var b = existing;
+					if (typeDef.IsAssignableFrom (existing))
 						b = type;
 					typeMap [k] = b;
 				} else {
 					List<string> a;
 					if (!aliases.TryGetValue (k, out a)) {
 						aliases.Add (k, a = new List<string> ());
-						a.Add (value (e));
+						a.Add (value (existing));
 					}
 					a.Add (value (type));
 				}
@@ -234,7 +215,7 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 
 			var typeMap = GetTypeMapping (
 					t => false,
-					t => t.GetPartialAssemblyQualifiedName (),
+					t => t.Assembly.Name,
 					JavaNativeTypeManager.ToJniName);
 
 			WriteBinaryMapping (output, typeMap);

@@ -25,7 +25,7 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 				TypeName = JavaNativeTypeManager.ReturnTypeFromSignature (GetJniSignature (method)).Type;
 				IsStatic = method.IsStatic ();
 				Access = method.Attributes & MethodAttributes.MemberAccessMask;
-				Annotations = GetAnnotationsString ("\t", method.CustomAttributes);
+				Annotations = GetAnnotationsString ("\t", method.GetCustomAttributes ());
 			}
 
 			public MethodAttributes Access { get; private set; }
@@ -75,15 +75,18 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 
 		void AddNestedTypes (IEnumerable<TypeDefinitionHandle> nestedTypes)
 		{
-			foreach (var nt in nestedTypes) {
-				var type = reader.GetTypeDefinition (nt);
+			foreach (var h in nestedTypes) {
+				var nt = reader.GetTypeDefinition (h);
 				if (!type.IsSubclassOf (reader, "Java.Lang", "Object"))
 					continue;
 				if (!JavaNativeTypeManager.IsNonStaticInnerClass (nt))
 					continue;
-				children.Add (new JavaCallableWrapperGenerator (nt, JavaNativeTypeManager.ToJniName (type), log));
-				if (nt.HasNestedTypes)
-					AddNestedTypes (nt);
+				children.Add (new JavaCallableWrapperGenerator (reader, nt, JavaNativeTypeManager.ToJniName (nt), log));
+
+				var childNestedTypes = type.GetNestedTypes ();
+				if (childNestedTypes.Length > 0) {
+					AddNestedTypes (childNestedTypes);
+				}
 			}
 			HasExport |= children.Any (t => t.HasExport);
 		}
@@ -94,12 +97,12 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 			this.type = type;
 			this.log = log;
 
-			if (type.IsEnum || type.IsInterface || type.IsValueType)
-				Diagnostic.Error (4200, LookupSource (type), "Can only generate Java wrappers for 'class' types, not type '{0}'.", type.FullName);
+			if (type.IsEnum () || type.IsInterface () || type.IsValueType ())
+				Diagnostic.Error (4200, LookupSource (type), "Can only generate Java wrappers for 'class' types, not type '{0}'.", type.FullName (reader));
 
 			string jniName = JavaNativeTypeManager.ToJniName (type);
 			if (jniName == null)
-				Diagnostic.Error (4201, LookupSource (type), "Unable to determine Java name for type {0}", type.FullName);
+				Diagnostic.Error (4201, LookupSource (type), "Unable to determine Java name for type {0}", type.FullName (reader));
 			if (!string.IsNullOrEmpty (outerType)) {
 				string p;
 				jniName = jniName.Substring (outerType.Length + 1);
@@ -107,14 +110,14 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 			}
 			ExtractJavaNames (jniName, out package, out name);
 			if (string.IsNullOrEmpty (package) &&
-					(type.IsSubclassOf ("Android.App.Activity") ||
-					 type.IsSubclassOf ("Android.App.Application") ||
-					 type.IsSubclassOf ("Android.App.Service") ||
-					 type.IsSubclassOf ("Android.Content.BroadcastReceiver") ||
-					 type.IsSubclassOf ("Android.Content.ContentProvider")))
+					(type.IsSubclassOf (reader, "Android.App", "Activity", "Application", "Service") ||
+					 type.IsSubclassOf (reader, "Android.Content", "BroadcastReceiver", "ContentProvider")))
 				Diagnostic.Error (4203, LookupSource (type), "The Name property must be a fully qualified 'package.TypeName' value, and no package was found for '{0}'.", jniName);
 
-			foreach (MethodDefinition minfo in type.Methods.Where (m => !m.IsConstructor)) {
+			foreach (var m in type.GetMethods ()) {
+				var minfo = reader.GetMethodDefinition (m);
+				if (minfo.IsCtor ())
+					continue;
 				var baseRegisteredMethod = GetBaseRegisteredMethod (minfo);
 				if (baseRegisteredMethod != null)
 					AddMethod (baseRegisteredMethod, minfo);
@@ -145,7 +148,7 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 			var ctorTypes = new List<TypeDefinition> () {
 				type,
 			};
-			foreach (var bt in type.GetBaseTypes ()) {
+			foreach (var bt in type.GetBaseTypes (reader)) {
 				ctorTypes.Add (bt);
 				RegisterAttribute rattr = GetRegisterAttributes (bt).FirstOrDefault ();
 				if (rattr != null && rattr.DoNotGenerateAcw)
@@ -155,15 +158,10 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 
 			var curCtors = new List<MethodDefinition> ();
 
-			foreach (MethodDefinition minfo in type.Methods.Where (m => m.IsConstructor)) {
+			foreach (var minfo in type.GetInstanceConstructors (reader)) {
 				if (GetExportAttributes (minfo).Any ()) {
-					if (minfo.IsStatic) {
-						// Diagnostic.Warning (log, "ExportAttribute does not work on static constructor");
-					}
-					else {
-						AddConstructor (minfo, ctorTypes [0], outerType, null, curCtors, false, true);
-						HasExport = true;
-					}
+					AddConstructor (minfo, ctorTypes [0], outerType, null, curCtors, false, true);
+					HasExport = true;
 				}
 			}
 
@@ -228,7 +226,7 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 
 		void AddConstructors (TypeDefinition type, string outerType, List<MethodDefinition> baseCtors, List<MethodDefinition> curCtors, bool onlyRegisteredOrExportedCtors)
 		{
-			foreach (MethodDefinition ctor in type.Methods.Where (m => m.IsConstructor && !m.IsStatic))
+			foreach (MethodDefinition ctor in type.GetInstanceConstructors (reader))
 				if (!GetExportAttributes (ctor).Any ())
 					AddConstructor (ctor, type, outerType, baseCtors, curCtors, onlyRegisteredOrExportedCtors, false);
 		}
@@ -330,22 +328,22 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 			return new ExportFieldAttribute ((string) attr.ConstructorArguments [0].Value);
 		}
 
-		static IEnumerable<RegisterAttribute> GetRegisterAttributes (Mono.Cecil.ICustomAttributeProvider p)
+		static IEnumerable<RegisterAttribute> GetRegisterAttributes (TypeDefinition p)
 		{
 			return GetAttributes<RegisterAttribute> (p, a => ToRegisterAttribute (a));
 		}
 
-		static IEnumerable<ExportAttribute> GetExportAttributes (Mono.Cecil.IMemberDefinition p)
+		static IEnumerable<ExportAttribute> GetExportAttributes (MethodDefinition p)
 		{
 			return GetAttributes<ExportAttribute> (p, a => ToExportAttribute (a, p));
 		}
 
-		static IEnumerable<ExportFieldAttribute> GetExportFieldAttributes (Mono.Cecil.ICustomAttributeProvider p)
+		static IEnumerable<ExportFieldAttribute> GetExportFieldAttributes (TypeDefinition p)
 		{
 			return GetAttributes<ExportFieldAttribute> (p, a => ToExportFieldAttribute (a));
 		}
 
-		static IEnumerable<TAttribute> GetAttributes<TAttribute> (Mono.Cecil.ICustomAttributeProvider p, Func<CustomAttribute, TAttribute> selector)
+		static IEnumerable<TAttribute> GetAttributes<TAttribute> (TypeDefinition p, Func<CustomAttribute, TAttribute> selector)
 		{
 			return p.GetCustomAttributes (typeof (TAttribute))
 				.Select (selector);
@@ -367,7 +365,7 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 				if (!string.IsNullOrEmpty (attr.SuperArgumentsString)) {
 					// Diagnostic.Warning (log, "Use of ExportAttribute.SuperArgumentsString property is invalid on methods");
 				}
-				if (!implementedMethod.IsConstructor && !methods.Any (m => m.Name == msig.Name && m.Params == msig.Params))
+				if (!implementedMethod.IsCtor () && !methods.Any (m => m.Name == msig.Name && m.Params == msig.Params))
 					methods.Add (msig);
 			}
 			foreach (ExportFieldAttribute attr in GetExportFieldAttributes (implementedMethod)) {
@@ -375,7 +373,7 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 					Diagnostic.Error (4207, LookupSource (implementedMethod), "[ExportField] cannot be used on a generic type.");
 
 				var msig = new Signature (implementedMethod, attr);
-				if (!implementedMethod.IsConstructor && !methods.Any (m => m.Name == msig.Name && m.Params == msig.Params)) {
+				if (!implementedMethod.IsConstructor () && !methods.Any (m => m.Name == msig.Name && m.Params == msig.Params)) {
 					methods.Add (msig);
 					exported_fields.Add (new JavaFieldInfo (implementedMethod, attr.Name));
 				}
@@ -385,7 +383,8 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 		string GetManagedParameters (MethodDefinition ctor, string outerType)
 		{
 			StringBuilder sb = new StringBuilder ();
-			foreach (ParameterDefinition pdef in ctor.Parameters) {
+			foreach (var p in ctor.GetParameters ()) {
+				var pdef = reader.GetParameter (p);
 				if (sb.Length > 0)
 					sb.Append (':');
 				if (outerType != null && sb.Length == 0)
@@ -480,7 +479,7 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 			}
 		}
 
-		static string GetAnnotationsString (string indent, IEnumerable<CustomAttribute> atts)
+		static string GetAnnotationsString (string indent, IEnumerable<CustomAttributeHandle> atts)
 		{
 			var sw = new StringWriter ();
 			WriteAnnotations (indent, sw, atts);

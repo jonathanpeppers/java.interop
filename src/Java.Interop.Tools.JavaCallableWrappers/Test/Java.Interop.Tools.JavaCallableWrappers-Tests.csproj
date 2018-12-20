@@ -34,6 +34,12 @@
       <HintPath>..\..\..\packages\NUnit.3.7.1\lib\net45\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Collections.Immutable, Version=1.2.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\System.Collections.Immutable.1.5.0\lib\netstandard2.0\System.Collections.Immutable.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reflection.Metadata, Version=1.4.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\System.Reflection.Metadata.1.6.0\lib\netstandard2.0\System.Reflection.Metadata.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Java.Interop.Tools.JavaCallableWrappers\JavaCallableWrapperGeneratorTests.cs" />
@@ -45,6 +51,7 @@
     <Compile Include="Android.App\ServiceAttribute.cs" />
     <Compile Include="Android.Content\BroadcastReceiverAttribute.cs" />
     <Compile Include="Android.Content\ContentProviderAttribute.cs" />
+    <Compile Include="System.Reflection.Metadata.Utils\TypeExtensionsTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -66,11 +73,6 @@
       <Project>{15945D4B-FF56-4BCC-B598-2718D199DD08}</Project>
       <Name>Xamarin.Android.Cecil</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Java.Interop.Tools.JavaCallableWrappers\" />
-    <Folder Include="Android.App\" />
-    <Folder Include="Android.Content\" />
   </ItemGroup>
   <Import Project="..\..\Java.Interop.NamingCustomAttributes\Java.Interop.NamingCustomAttributes.projitems" Label="Shared" Condition="Exists('..\..\Java.Interop.NamingCustomAttributes\Java.Interop.NamingCustomAttributes.projitems')" />
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

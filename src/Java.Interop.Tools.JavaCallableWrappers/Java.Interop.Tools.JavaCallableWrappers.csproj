@@ -47,6 +47,8 @@
     <Compile Include="..\Java.Interop.Tools.TypeNameMappings\Java.Interop.Tools.TypeNameMappings\JavaNativeTypeManager.cs">
       <Link>JavaNativeTypeManager.cs</Link>
     </Compile>
+    <Compile Include="System.Reflection.Metadata.Utils\MethodDefinitionExtensions.cs" />
+    <Compile Include="System.Reflection.Metadata.Utils\TypeDefinitionAndAssembly.cs" />
     <Compile Include="System.Reflection.Metadata.Utils\TypeDefinitionExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
