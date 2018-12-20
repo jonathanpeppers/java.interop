@@ -17,13 +17,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "generator", "tools\generato
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{4C173212-371D-45D8-BA83-9226194F48DC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Java.Interop", "src\Java.Interop\Java.Interop.csproj", "{94BD81F7-B06F-4295-9636-F8A3B6BDC762}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Java.Interop", "src\Java.Interop\Java.Interop.csproj", "{94BD81F7-B06F-4295-9636-F8A3B6BDC762}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "java-interop", "src\java-interop\java-interop.csproj", "{BB0AB9F7-0979-41A7-B7A9-877260655F94}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Java.Interop.Dynamic", "src\Java.Interop.Dynamic\Java.Interop.Dynamic.csproj", "{AD4468F8-8883-434B-9D4C-E1801BB3B52A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Java.Interop.Dynamic", "src\Java.Interop.Dynamic\Java.Interop.Dynamic.csproj", "{AD4468F8-8883-434B-9D4C-E1801BB3B52A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Java.Interop.Export", "src\Java.Interop.Export\Java.Interop.Export.csproj", "{B501D075-6183-4E1D-92C9-F7B5002475B1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Java.Interop.Export", "src\Java.Interop.Export\Java.Interop.Export.csproj", "{B501D075-6183-4E1D-92C9-F7B5002475B1}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core-Tests", "Core-Tests", "{647B3EED-85D7-45E6-A297-44DC70C79503}"
 EndProject
@@ -97,11 +97,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xamarin.Android.Cecil", "sr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xamarin.Android.Cecil.Mdb", "src\Xamarin.Android.Cecil\Xamarin.Android.Cecil.Mdb.csproj", "{C0487169-8F81-497F-919E-EB42B1D0243F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Java.Interop.GenericMarshaler", "src\Java.Interop.GenericMarshaler\Java.Interop.GenericMarshaler.csproj", "{D1243BAB-23CA-4566-A2A3-3ADA2C2DC3AF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Java.Interop.GenericMarshaler", "src\Java.Interop.GenericMarshaler\Java.Interop.GenericMarshaler.csproj", "{D1243BAB-23CA-4566-A2A3-3ADA2C2DC3AF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Java.Interop.BootstrapTasks", "build-tools\Java.Interop.BootstrapTasks\Java.Interop.BootstrapTasks.csproj", "{3E8E5C8C-59A6-4A9A-B55D-46AB14431B2A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xamarin.Android.Tools.AndroidSdk", "external\xamarin-android-tools\src\Xamarin.Android.Tools.AndroidSdk\Xamarin.Android.Tools.AndroidSdk.csproj", "{E34BCFA0-CAA4-412C-AA1C-75DB8D67D157}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "System.Reflection.Metatdata.Utils", "src\System.Reflection.Metadata.Utils\System.Reflection.Metatdata.Utils.csproj", "{919CC4CB-19CF-4CC2-8B95-0CFD36819FEF}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -114,10 +116,6 @@ Global
 		src\Java.Interop.Export\Tests\Export-Tests.projitems*{82f24161-f0ca-44cc-aec3-885d613605e0}*SharedItemsImports = 4
 		src\Java.Interop.Export\Tests\Export-Tests.projitems*{849abedc-6a9c-44f0-8543-5298c096a3fb}*SharedItemsImports = 13
 		src\Java.Interop.Dynamic\Tests\Dynamic-Tests.projitems*{8a190f28-74c7-45d8-a701-5864cdf4124a}*SharedItemsImports = 13
-		src\Java.Interop.Dynamic\Tests\Dynamic-Tests.projitems*{c5176170-4025-4a87-b143-11dc64f9bdd1}*SharedItemsImports = 4
-		src\Java.Interop.Export\Tests\Export-Tests.projitems*{c5176170-4025-4a87-b143-11dc64f9bdd1}*SharedItemsImports = 4
-		src\Java.Interop\Tests\Interop-Tests.projitems*{c5176170-4025-4a87-b143-11dc64f9bdd1}*SharedItemsImports = 4
-		tests\PerformanceTests\PerformanceTests.projitems*{c5176170-4025-4a87-b143-11dc64f9bdd1}*SharedItemsImports = 4
 		src\Java.Interop.NamingCustomAttributes\Java.Interop.NamingCustomAttributes.projitems*{d1295a8f-4f42-461d-a046-564476c10002}*SharedItemsImports = 4
 		src\Java.Interop.NamingCustomAttributes\Java.Interop.NamingCustomAttributes.projitems*{d18fcf91-8876-48a0-a693-2dc1e7d3d80a}*SharedItemsImports = 4
 		src\Java.Interop.NamingCustomAttributes\Java.Interop.NamingCustomAttributes.projitems*{fe789f04-5e95-42c5-aef1-e33f8df06b3f}*SharedItemsImports = 13
@@ -271,6 +269,10 @@ Global
 		{E34BCFA0-CAA4-412C-AA1C-75DB8D67D157}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E34BCFA0-CAA4-412C-AA1C-75DB8D67D157}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E34BCFA0-CAA4-412C-AA1C-75DB8D67D157}.Release|Any CPU.Build.0 = Release|Any CPU
+		{919CC4CB-19CF-4CC2-8B95-0CFD36819FEF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{919CC4CB-19CF-4CC2-8B95-0CFD36819FEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{919CC4CB-19CF-4CC2-8B95-0CFD36819FEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{919CC4CB-19CF-4CC2-8B95-0CFD36819FEF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -318,6 +320,7 @@ Global
 		{D1243BAB-23CA-4566-A2A3-3ADA2C2DC3AF} = {4C173212-371D-45D8-BA83-9226194F48DC}
 		{3E8E5C8C-59A6-4A9A-B55D-46AB14431B2A} = {172B608B-E6F3-41CC-9949-203A76BA247C}
 		{E34BCFA0-CAA4-412C-AA1C-75DB8D67D157} = {172B608B-E6F3-41CC-9949-203A76BA247C}
+		{919CC4CB-19CF-4CC2-8B95-0CFD36819FEF} = {0998E45F-8BCE-4791-A944-962CD54E2D80}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {29204E0C-382A-49A0-A814-AD7FBF9774A5}

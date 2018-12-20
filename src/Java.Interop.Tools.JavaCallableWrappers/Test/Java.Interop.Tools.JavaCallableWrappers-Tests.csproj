@@ -51,7 +51,6 @@
     <Compile Include="Android.App\ServiceAttribute.cs" />
     <Compile Include="Android.Content\BroadcastReceiverAttribute.cs" />
     <Compile Include="Android.Content\ContentProviderAttribute.cs" />
-    <Compile Include="System.Reflection.Metadata.Utils\TypeExtensionsTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
