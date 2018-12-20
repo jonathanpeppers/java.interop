@@ -26,6 +26,12 @@ namespace System.Reflection.Metadata.Utils
 			throw new NotImplementedException ();
 		}
 
+		public static bool IsArray (this TypeDefinition type)
+		{
+			//TODO: implement
+			throw new NotImplementedException ();
+		}
+
 		public static bool IsAbstract (this TypeDefinition type)
 		{
 			return (type.Attributes & TypeAttributes.Abstract) != 0;

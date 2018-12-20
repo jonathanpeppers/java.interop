@@ -8,6 +8,7 @@ using Android.Runtime;
 
 #if HAVE_SRM
 using System.Reflection.Metadata;
+using System.Reflection.Metadata.Utils;
 #endif  // HAVE_SRM
 
 namespace Java.Interop.Tools.TypeNameMappings
@@ -374,14 +375,14 @@ namespace Java.Interop.Tools.TypeNameMappings
 			return new ExportParameterAttribute ((ExportParameterKind)attr.ConstructorArguments [0].Value);
 		}
 
-		public static bool IsApplication (TypeDefinition type)
+		public static bool IsApplication (TypeDefinition type, MetadataReader reader)
 		{
-			return type.GetBaseTypes ().Any (b => b.FullName == "Android.App.Application");
+			return type.IsSubclassOf (reader, "Android.App", "Application");
 		}
 
 		public static bool IsInstrumentation (TypeDefinition type)
 		{
-			return type.GetBaseTypes ().Any (b => b.FullName == "Android.App.Instrumentation");
+			return type.IsSubclassOf (reader, "Android.App", "Instrumentation");
 		}
 
 		// moved from JavaTypeInfo
@@ -412,18 +413,18 @@ namespace Java.Interop.Tools.TypeNameMappings
 				}, t => t.FullName, (t, k) => ToJniName (t, k));
 		}
 
-		public static string ToCompatJniName (Mono.Cecil.TypeDefinition type)
+		public static string ToCompatJniName (TypeDefinition type)
 		{
 			return ToJniName (type, t => t.DeclaringType, t => t.Name, ToCompatPackageName, ToJniNameFromAttributes, t => IsNonStaticInnerClass (t as TypeDefinition));
 		}
 
-		static string ToCompatPackageName (Mono.Cecil.TypeDefinition type)
+		static string ToCompatPackageName (TypeDefinition type)
 		{
 			return type.Namespace;
 		}
 
 		// Keep in sync with ToJniNameFromAttributes(Type) and ToJniName(Type)
-		public static string ToJniName (Mono.Cecil.TypeDefinition type)
+		public static string ToJniName (TypeDefinition type)
 		{
 			return ToJniName (type, ExportParameterKind.Unspecified) ??
 				"java/lang/Object";
@@ -470,51 +471,53 @@ namespace Java.Interop.Tools.TypeNameMappings
 			#endregion
 		}
 
-		public static int GetArrayInfo (Mono.Cecil.TypeReference type, out Mono.Cecil.TypeReference elementType)
+		public static int GetArrayInfo (TypeDefinition type, out TypeDefinition elementType)
 		{
 			elementType = type;
 			int rank = 0;
-			while (type.IsArray) {
+			while (type.IsArray ()) {
 				rank++;
 				elementType = type = type.GetElementType ();
 			}
 			return rank;
 		}
 
-		static string GetPrimitiveClass (Mono.Cecil.TypeDefinition type)
+		static string GetPrimitiveClass (TypeDefinition type, MetadataReader reader)
 		{
-			if (type.IsEnum)
+			if (type.IsEnum ())
 				return GetPrimitiveClass (type.Fields.First (f => f.IsSpecialName).FieldType.Resolve ());
-			if (type.FullName == "System.Byte")
+			var fullName = type.FullName (reader);
+			if (fullName == "System.Byte")
 				return "B";
-			if (type.FullName == "System.Char")
+			if (fullName == "System.Char")
 				return "C";
-			if (type.FullName == "System.Double")
+			if (fullName == "System.Double")
 				return "D";
-			if (type.FullName == "System.Single")
+			if (fullName == "System.Single")
 				return "F";
-			if (type.FullName == "System.Int32")
+			if (fullName == "System.Int32")
 				return "I";
-			if (type.FullName == "System.Int64")
+			if (fullName == "System.Int64")
 				return "J";
-			if (type.FullName == "System.Int16")
+			if (fullName == "System.Int16")
 				return "S";
-			if (type.FullName == "System.Boolean")
+			if (fullName == "System.Boolean")
 				return "Z";
 			return null;
 		}
 
-		public static string GetPackageName (TypeDefinition type)
+		public static string GetPackageName (TypeDefinitionAndAssembly typeAndAssembly, MetadataReader reader)
 		{
-			if (IsPackageNamePreservedForAssembly (type.GetPartialAssemblyName ()))
-				return type.Namespace.ToLowerInvariant ();
+			var type = typeAndAssembly.Type;
+			if (IsPackageNamePreservedForAssembly (typeAndAssembly.Assembly.Name))
+				return reader.GetString (type.Namespace).ToLowerInvariant ();
 			switch (PackageNamingPolicy) {
 			case PackageNamingPolicy.Lowercase:
-				return type.Namespace.ToLowerInvariant ();
+				return reader.GetString (type.Namespace).ToLowerInvariant ();
 			case PackageNamingPolicy.LowercaseWithAssemblyName:
-				return "assembly_" + (type.GetPartialAssemblyName ().Replace ('.', '_') + "." + type.Namespace).ToLowerInvariant ();
+				return "assembly_" + (typeAndAssembly.Assembly.Name.Replace ('.', '_') + "." + type.Namespace).ToLowerInvariant ();
 			default:
-				return "md5" + ToMd5 (type.Namespace + ":" + type.GetPartialAssemblyName ());
+				return "md5" + ToMd5 (reader.GetString (type.Namespace) + ":" + typeAndAssembly.Assembly.Name);
 			}
 		}
 #endif

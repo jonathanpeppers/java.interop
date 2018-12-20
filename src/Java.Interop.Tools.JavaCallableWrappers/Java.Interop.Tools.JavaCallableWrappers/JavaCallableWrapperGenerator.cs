@@ -312,7 +312,7 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 			return r;
 		}
 
-		internal static ExportAttribute ToExportAttribute (CustomAttribute attr, IMemberDefinition declaringMember)
+		internal static ExportAttribute ToExportAttribute (CustomAttribute attr, TypeDefinition declaringMember)
 		{
 			var name = attr.ConstructorArguments.Count > 0 ? (string) attr.ConstructorArguments [0].Value : declaringMember.Name;
 			if (attr.Properties.Count == 0)
@@ -358,7 +358,7 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 						methods.Add (msig);
 				}
 			foreach (ExportAttribute attr in GetExportAttributes (implementedMethod)) {
-				if (type.HasGenericParameters)
+				if (type.HasGenericParameters ())
 					Diagnostic.Error (4206, LookupSource (implementedMethod), "[Export] cannot be used on a generic type.");
 
 				var msig = new Signature (implementedMethod, attr);
@@ -369,7 +369,7 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 					methods.Add (msig);
 			}
 			foreach (ExportFieldAttribute attr in GetExportFieldAttributes (implementedMethod)) {
-				if (type.HasGenericParameters)
+				if (type.HasGenericParameters ())
 					Diagnostic.Error (4207, LookupSource (implementedMethod), "[ExportField] cannot be used on a generic type.");
 
 				var msig = new Signature (implementedMethod, attr);
