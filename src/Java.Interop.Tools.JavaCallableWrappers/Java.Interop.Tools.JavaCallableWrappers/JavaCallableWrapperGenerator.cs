@@ -3,31 +3,27 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Utils;
 using System.Text;
 using System.Text.RegularExpressions;
 
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-
 using Android.Runtime;
 
-using Java.Interop.Tools.Cecil;
 using Java.Interop.Tools.Diagnostics;
 using Java.Interop.Tools.TypeNameMappings;
-
-using MethodAttributes = Mono.Cecil.MethodAttributes;
 
 namespace Java.Interop.Tools.JavaCallableWrappers {
 
 	 public class JavaCallableWrapperGenerator {
 
 		class JavaFieldInfo {
-			public JavaFieldInfo (MethodDefinition method, string fieldName)
+			public JavaFieldInfo (MethodDefinition method, string methodName, string fieldName)
 			{
 				this.FieldName = fieldName;
-				InitializerName = method.Name;
+				InitializerName = methodName;
 				TypeName = JavaNativeTypeManager.ReturnTypeFromSignature (GetJniSignature (method)).Type;
-				IsStatic = method.IsStatic;
+				IsStatic = method.IsStatic ();
 				Access = method.Attributes & MethodAttributes.MemberAccessMask;
 				Annotations = GetAnnotationsString ("\t", method.CustomAttributes);
 			}
@@ -48,18 +44,20 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 		Action<string, object[]> log;
 		string name;
 		string package;
+		MetadataReader reader;
 		TypeDefinition type;
 		List<JavaFieldInfo> exported_fields = new List<JavaFieldInfo> ();
 		List<Signature> methods = new List<Signature> ();
 		List<Signature> ctors   = new List<Signature> ();
 		List<JavaCallableWrapperGenerator> children;
 
-		public JavaCallableWrapperGenerator (TypeDefinition type, Action<string, object[]> log)
-			: this (type, null, log)
+		public JavaCallableWrapperGenerator (MetadataReader reader, TypeDefinition type, Action<string, object[]> log)
+			: this (reader, type, null, log)
 		{
-			if (type.HasNestedTypes) {
-				children = new List<JavaCallableWrapperGenerator> ();
-				AddNestedTypes (type);
+			var nestedTypes = type.GetNestedTypes ();
+			if (nestedTypes.Length > 0) {
+				children = new List<JavaCallableWrapperGenerator> (nestedTypes.Length);
+				AddNestedTypes (nestedTypes);
 			}
 		}
 
@@ -75,10 +73,11 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 			get { return name; }
 		}
 
-		void AddNestedTypes (TypeDefinition type)
+		void AddNestedTypes (IEnumerable<TypeDefinitionHandle> nestedTypes)
 		{
-			foreach (TypeDefinition nt in type.NestedTypes) {
-				if (!nt.IsSubclassOf ("Java.Lang.Object"))
+			foreach (var nt in nestedTypes) {
+				var type = reader.GetTypeDefinition (nt);
+				if (!type.IsSubclassOf (reader, "Java.Lang", "Object"))
 					continue;
 				if (!JavaNativeTypeManager.IsNonStaticInnerClass (nt))
 					continue;
@@ -89,8 +88,9 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 			HasExport |= children.Any (t => t.HasExport);
 		}
 
-		JavaCallableWrapperGenerator (TypeDefinition type, string outerType, Action<string, object[]> log)
+		JavaCallableWrapperGenerator (MetadataReader reader, TypeDefinition type, string outerType, Action<string, object[]> log)
 		{
+			this.reader = reader;
 			this.type = type;
 			this.log = log;
 

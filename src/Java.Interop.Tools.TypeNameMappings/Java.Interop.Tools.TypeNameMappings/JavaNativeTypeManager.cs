@@ -6,16 +6,16 @@ using System.Security.Cryptography;
 using System.Text;
 using Android.Runtime;
 
-#if HAVE_CECIL
+#if HAVE_SRM
 using Mono.Cecil;
 using Java.Interop.Tools.Cecil;
 using Java.Interop.Tools.JavaCallableWrappers;
-#endif  // HAVE_CECIL
+#endif  // HAVE_SRM
 
 namespace Java.Interop.Tools.TypeNameMappings
 {
 
-#if HAVE_CECIL
+#if HAVE_SRM
 	public
 #endif
 	enum PackageNamingPolicy {
@@ -24,7 +24,7 @@ namespace Java.Interop.Tools.TypeNameMappings
 		LowercaseWithAssemblyName,
 	}
 
-#if HAVE_CECIL
+#if HAVE_SRM
 	public
 #endif
 	class JniTypeName
@@ -33,7 +33,7 @@ namespace Java.Interop.Tools.TypeNameMappings
 		public bool IsKeyword { get; internal set; }
 	}
 
-#if HAVE_CECIL
+#if HAVE_SRM
 	public
 #endif
 	static class JavaNativeTypeManager {
@@ -362,7 +362,7 @@ namespace Java.Interop.Tools.TypeNameMappings
 			return ret ?? ToJniName (type, exportKind);
 		}
 
-#if HAVE_CECIL
+#if HAVE_SRM
 
 		internal static ExportParameterKind GetExportKind (Mono.Cecil.ICustomAttributeProvider p)
 		{
@@ -559,7 +559,7 @@ namespace Java.Interop.Tools.TypeNameMappings
 				: _ns.Replace ('.', '/') + "/" + typeName;
 		}
 
-#if HAVE_CECIL
+#if HAVE_SRM
 		internal static bool IsNonStaticInnerClass (TypeDefinition type)
 		{
 			if (type == null)
@@ -581,7 +581,7 @@ namespace Java.Interop.Tools.TypeNameMappings
 				return baseType.Methods.Where (m => m.IsConstructor && !m.IsStatic);
 			return Enumerable.Empty<MethodDefinition> ();
 		}
-#endif  // HAVE_CECIL
+#endif  // HAVE_SRM
 
 		static string ToMd5 (string value)
 		{
