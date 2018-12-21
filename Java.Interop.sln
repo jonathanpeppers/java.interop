@@ -105,6 +105,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xamarin.Android.Tools.Andro
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "System.Reflection.Metatdata.Utils", "src\System.Reflection.Metadata.Utils\System.Reflection.Metatdata.Utils.csproj", "{919CC4CB-19CF-4CC2-8B95-0CFD36819FEF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "System.Reflection.Metadata.Utils-Tests", "src\System.Reflection.Metadata.Utils\Test\System.Reflection.Metadata.Utils-Tests.csproj", "{17C229A2-3235-4EE6-8B98-956DA329A1D1}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		src\Java.Interop\Tests\Interop-Tests.projitems*{04e28441-36ff-4964-add7-efbb47cce406}*SharedItemsImports = 4
@@ -273,6 +275,10 @@ Global
 		{919CC4CB-19CF-4CC2-8B95-0CFD36819FEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{919CC4CB-19CF-4CC2-8B95-0CFD36819FEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{919CC4CB-19CF-4CC2-8B95-0CFD36819FEF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{17C229A2-3235-4EE6-8B98-956DA329A1D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{17C229A2-3235-4EE6-8B98-956DA329A1D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{17C229A2-3235-4EE6-8B98-956DA329A1D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{17C229A2-3235-4EE6-8B98-956DA329A1D1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -321,6 +327,7 @@ Global
 		{3E8E5C8C-59A6-4A9A-B55D-46AB14431B2A} = {172B608B-E6F3-41CC-9949-203A76BA247C}
 		{E34BCFA0-CAA4-412C-AA1C-75DB8D67D157} = {172B608B-E6F3-41CC-9949-203A76BA247C}
 		{919CC4CB-19CF-4CC2-8B95-0CFD36819FEF} = {0998E45F-8BCE-4791-A944-962CD54E2D80}
+		{17C229A2-3235-4EE6-8B98-956DA329A1D1} = {271C9F30-F679-4793-942B-0D9527CB3E2F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {29204E0C-382A-49A0-A814-AD7FBF9774A5}

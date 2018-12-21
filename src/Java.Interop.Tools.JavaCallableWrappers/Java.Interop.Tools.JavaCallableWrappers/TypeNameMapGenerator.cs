@@ -115,7 +115,7 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 				throw new ArgumentNullException ("output");
 
 			var typeMap = GetTypeMapping (
-					t => t.Type.IsInterface () || t.Type.HasGenericParameters (),
+					t => t.Type.IsInterface () || t.Type.IsGeneric (),
 					t => JavaNativeTypeManager.ToJniName (t.Type),
 					t => t.Assembly.Name);
 

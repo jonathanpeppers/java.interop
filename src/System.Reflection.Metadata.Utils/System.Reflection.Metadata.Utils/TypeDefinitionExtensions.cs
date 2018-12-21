@@ -4,26 +4,68 @@ namespace System.Reflection.Metadata.Utils
 {
 	public static class TypeDefinitionExtensions
 	{
-		public static bool IsClass (this TypeDefinition type)
+		public static bool AreEqual (this MetadataReader reader, TypeDefinition type, string @namespace, string typeName)
 		{
-			return (type.Attributes & TypeAttributes.Class) != 0;
+			return typeName == reader.GetString (type.Name) && @namespace == reader.GetString (type.Namespace);
 		}
 
-		public static bool IsEnum (this TypeDefinition type)
+		public static bool AreEqual (this MetadataReader reader, TypeReference type, string @namespace, string typeName)
 		{
-			//TODO: implement
-			throw new NotImplementedException ();
+			return typeName == reader.GetString (type.Name) && @namespace == reader.GetString (type.Namespace);
+		}
+
+		public static bool AreEqual (this MetadataReader reader, TypeDefinition type, string @namespace, params string [] typeNames)
+		{
+			if (@namespace != reader.GetString (type.Namespace))
+				return false;
+
+			var actual = reader.GetString (type.Name);
+			foreach (var typeName in typeNames) {
+				if (actual == typeName)
+					return true;
+			}
+			return false;
+		}
+
+		public static bool AreEqual (this MetadataReader reader, TypeReference type, string @namespace, params string [] typeNames)
+		{
+			if (@namespace != reader.GetString (type.Namespace))
+				return false;
+
+			var actual = reader.GetString (type.Name);
+			foreach (var typeName in typeNames) {
+				if (actual == typeName)
+					return true;
+			}
+			return false;
+		}
+
+		public static bool IsClass (this TypeDefinition type)
+		{
+			return (type.Attributes & TypeAttributes.ClassSemanticsMask) == TypeAttributes.Class;
+		}
+
+		public static bool IsEnum (this TypeDefinition type, MetadataReader reader)
+		{
+			if (type.BaseType.Kind == HandleKind.TypeReference) {
+				var typeReference = reader.GetTypeReference ((TypeReferenceHandle)type.BaseType);
+				return reader.AreEqual (typeReference, "System", "Enum");
+			}
+			return false;
 		}
 
 		public static bool IsInterface (this TypeDefinition type)
 		{
-			return (type.Attributes & TypeAttributes.Interface) != 0;
+			return (type.Attributes & TypeAttributes.ClassSemanticsMask) == TypeAttributes.Interface;
 		}
 
-		public static bool IsValueType (this TypeDefinition type)
+		public static bool IsValueType (this TypeDefinition type, MetadataReader reader)
 		{
-			//TODO: implement
-			throw new NotImplementedException ();
+			if (type.BaseType.Kind == HandleKind.TypeReference) {
+				var typeReference = reader.GetTypeReference ((TypeReferenceHandle)type.BaseType);
+				return reader.AreEqual (typeReference, "System", "ValueType", "Enum");
+			}
+			return false;
 		}
 
 		public static bool IsArray (this TypeDefinition type)
@@ -37,7 +79,7 @@ namespace System.Reflection.Metadata.Utils
 			return (type.Attributes & TypeAttributes.Abstract) != 0;
 		}
 
-		public static bool HasGenericParameters (this TypeDefinition type)
+		public static bool IsGeneric (this TypeDefinition type)
 		{
 			var generics = type.GetGenericParameters ();
 			return generics.Count > 0;
@@ -45,7 +87,7 @@ namespace System.Reflection.Metadata.Utils
 
 		public static string FullName (this TypeDefinition type, MetadataReader reader)
 		{
-			var ns = reader.GetString (type.Name);
+			var ns = reader.GetString (type.Namespace);
 			var name = reader.GetString (type.Name);
 			return $"{ns}.{name}";
 		}
@@ -75,14 +117,8 @@ namespace System.Reflection.Metadata.Utils
 		public static bool IsSubclassOf (this TypeDefinition type, MetadataReader reader, string @namespace, params string [] typeNames)
 		{
 			foreach (var baseType in type.GetTypeAndBaseTypes (reader)) {
-				var ns = reader.GetString (baseType.Namespace);
-				if (ns == @namespace) {
-					var name = reader.GetString (baseType.Name);
-					foreach (var typeName in typeNames) {
-						if (name == typeName)
-							return true;
-					}
-				}
+				if (reader.AreEqual (baseType, @namespace, typeNames))
+					return true;
 			}
 			return false;
 		}
@@ -94,12 +130,12 @@ namespace System.Reflection.Metadata.Utils
 					var iface = reader.GetInterfaceImplementation (i);
 					if (iface.Interface.Kind == HandleKind.TypeDefinition) {
 						var interfaceType = reader.GetTypeDefinition ((TypeDefinitionHandle)iface.Interface);
-						var ns = reader.GetString (interfaceType.Name);
-						if (ns == @namespace) {
-							var name = reader.GetString (interfaceType.Name);
-							if (name == interfaceName)
-								return true;
-						}
+						if (reader.AreEqual (interfaceType, @namespace, interfaceName))
+							return true;
+					} else if (iface.Interface.Kind == HandleKind.TypeReference) {
+						var interfaceType = reader.GetTypeReference ((TypeReferenceHandle)iface.Interface);
+						if (reader.AreEqual (interfaceType, @namespace, interfaceName))
+							return true;
 					}
 				}
 			}
