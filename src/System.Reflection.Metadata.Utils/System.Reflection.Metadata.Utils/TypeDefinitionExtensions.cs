@@ -92,6 +92,13 @@ namespace System.Reflection.Metadata.Utils
 			return $"{ns}.{name}";
 		}
 
+		public static string FullName (this TypeReference type, MetadataReader reader)
+		{
+			var ns = reader.GetString (type.Namespace);
+			var name = reader.GetString (type.Name);
+			return $"{ns}.{name}";
+		}
+
 		public static IEnumerable<TypeDefinition> GetTypeAndBaseTypes (this TypeDefinition type, MetadataReader reader)
 		{
 			yield return type;

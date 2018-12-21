@@ -44,6 +44,7 @@
     <Compile Include="System.Reflection.Metadata.Utils\MethodDefinitionExtensions.cs" />
     <Compile Include="System.Reflection.Metadata.Utils\TypeDefinitionAndAssembly.cs" />
     <Compile Include="System.Reflection.Metadata.Utils\TypeDefinitionExtensions.cs" />
+    <Compile Include="System.Reflection.Metadata.Utils\TypeProviders.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
