@@ -78,5 +78,24 @@
 			<method abstract="false" deprecated="not deprecated" final="false" name="publicMethod" native="false" return="void" static="false" synchronized="false" visibility="public">
 			</method>
 		</class>
+    <!--
+			interface BaseInterface {
+				public void foo();
+			}
+		-->
+    <interface abstract="true" deprecated="not deprecated" final="false" name="TestInterface" static="false" visibility="">
+      <method abstract="true" deprecated="not deprecated" final="false" name="foo" native="false" return="void" static="false" synchronized="false" visibility="public">
+      </method>
+    </interface>
+    <!--
+			public interface ExtendsInterface extends BaseInterface {
+				public void foo();
+			}
+		-->
+    <interface abstract="true" deprecated="not deprecated" final="false" name="ExtendsInterface" static="false" visibility="public">
+      <implements name="xamarin.test.BaseInterface" name-generic-aware="xamarin.test.BaseInterface" />
+      <method abstract="true" deprecated="not deprecated" final="false" name="foo" native="false" return="void" static="false" synchronized="false" visibility="public">
+      </method>
+    </interface>
 	</package>
 </api>

@@ -308,6 +308,26 @@ namespace MonoDroid.Generation {
 			}
 		}
 
+		public override void FixupAccessModifiers (CodeGenerationOptions opt)
+		{
+			//while (!IsAnnotation && !string.IsNullOrEmpty (BaseType)) {
+			//	var baseClass = opt.SymbolTable.Lookup (BaseType) as ClassGen;
+			//	if (baseClass != null && RawVisibility == "public" && baseClass.RawVisibility != "public") {
+			//		//Skip the BaseType and copy over any "missing" methods
+			//		foreach (var baseMethod in baseClass.Methods) {
+			//			var method = Methods.FirstOrDefault (m => m.Matches (baseMethod));
+			//			if (method == null)
+			//				Methods.Add (baseMethod);
+			//		}
+			//		BaseType = baseClass.BaseType;
+			//	} else {
+			//		break;
+			//	}
+			//}
+
+			base.FixupAccessModifiers (opt);
+		}
+
 		string GetArgsName (Method m)
 		{
 
