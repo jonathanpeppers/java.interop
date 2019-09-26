@@ -459,6 +459,9 @@ namespace Java.Interop.Tools.TypeNameMappings
 			return ToJniName (type, t => t.DeclaringType, t => t.Name, GetPackageName, ToJniNameFromAttributes, t => IsNonStaticInnerClass (t as TypeDefinition));
 		}
 
+		//TODO: implement
+		internal static string ToJniName (System.Reflection.Metadata.TypeDefinition type) => throw new NotImplementedException ();
+
 		static string ToJniNameFromAttributes (TypeDefinition type)
 		{
 			#region CustomAttribute alternate name support

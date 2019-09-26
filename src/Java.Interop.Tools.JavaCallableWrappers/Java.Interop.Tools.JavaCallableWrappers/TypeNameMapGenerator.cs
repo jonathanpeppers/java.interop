@@ -55,9 +55,8 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 	 * The rows MUST be sorted so that strcmp(3) can be used to compare keys
 	 * values between rows
 	 */
-	public class TypeNameMapGenerator : IDisposable {
+	public class TypeNameMapGenerator : BaseTypeNameMapGenerator {
 
-		Action<TraceLevel, string>      Log;
 		List<TypeDefinition>            Types;
 		DirectoryAssemblyResolver       Resolver;
 		JavaTypeScanner                 Scanner;
@@ -71,13 +70,11 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 		}
 
 		public TypeNameMapGenerator (IEnumerable<string> assemblies, Action<TraceLevel, string> logger)
+			: base (logger)
 		{
 			if (assemblies == null)
 				throw new ArgumentNullException ("assemblies");
-			if (logger == null)
-				throw new ArgumentNullException (nameof (logger));
 
-			Log             = logger;
 			var Assemblies  = assemblies.ToList ();
 			var rp          = new ReaderParameters ();
 
@@ -108,23 +105,14 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 		}
 
 		public TypeNameMapGenerator (IEnumerable<TypeDefinition> types, Action<TraceLevel, string> logger)
+			: base (logger)
 		{
 			if (types == null)
 				throw new ArgumentNullException ("types");
-			if (logger == null)
-				throw new ArgumentNullException (nameof (logger));
-
-			Log         = logger;
 			Types       = types.ToList ();
 		}
 
-		public void Dispose ()
-		{
-			Dispose (true);
-			GC.SuppressFinalize (this);
-		}
-
-		protected virtual void Dispose (bool disposing)
+		protected override void Dispose (bool disposing)
 		{
 			if (!disposing || Resolver == null)
 				return;
@@ -133,7 +121,7 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 			Resolver = null;
 		}
 
-		public void WriteJavaToManaged (Stream output)
+		public override void WriteJavaToManaged (Stream output)
 		{
 			if (output == null)
 				throw new ArgumentNullException ("output");
@@ -142,6 +130,19 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 					t => t.IsInterface || t.HasGenericParameters,
 					JavaNativeTypeManager.ToJniName,
 					t => t.GetPartialAssemblyQualifiedName ());
+
+			WriteBinaryMapping (output, typeMap);
+		}
+
+		public override void WriteManagedToJava (Stream output)
+		{
+			if (output == null)
+				throw new ArgumentNullException ("output");
+
+			var typeMap = GetTypeMapping (
+					t => false,
+					t => t.GetPartialAssemblyQualifiedName (),
+					JavaNativeTypeManager.ToJniName);
 
 			WriteBinaryMapping (output, typeMap);
 		}
@@ -183,61 +184,6 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 				}
 			}
 			return typeMap.ToDictionary (e => e.Key, e => value (e.Value));
-		}
-
-		static void WriteBinaryMapping (Stream o, Dictionary<string, string> mapping)
-		{
-			var encoding    = Encoding.UTF8;
-			var binary      = ToBinary (mapping, encoding);
-
-			var keyLen      = binary.Keys.Max (v => v?.Length) ?? 0;
-			var valueLen    = binary.Values.Max (v => v?.Length) ?? 0;
-
-			WriteHeader (o, binary.Count, keyLen, valueLen, encoding);
-
-			foreach (var key in binary.Keys.OrderBy (k => k, new ArrayComparer<byte> ())) {
-				Write (o, key, keyLen);
-				Write (o, binary [key], valueLen);
-			}
-			o.WriteByte (0x0);
-		}
-
-		static Dictionary<byte[], byte[]> ToBinary(Dictionary<string, string> map, Encoding encoding)
-		{
-			return map.ToDictionary (e => encoding.GetBytes (e.Key), e => encoding.GetBytes (e.Value));
-		}
-
-		static void WriteHeader (Stream o, int entries, int keyLen, int valueLen, Encoding encoding)
-		{
-			var header  = string.Format ("version=1\u0000entry-count={0}\u0000entry-len={1}\u0000value-offset={2}\u0000", entries, checked (keyLen + 1 + valueLen + 1), keyLen + 1);
-			WriteString (o, header, encoding);
-		}
-
-		static void WriteString (Stream o, string value, Encoding encoding)
-		{
-			var data = encoding.GetBytes (value);
-			o.Write (data, 0, data.Length);
-		}
-
-		static void Write (Stream o, byte[] value, int length)
-		{
-			o.Write (value, 0, value.Length);
-			for (int i = value.Length; i < length; ++i)
-				o.WriteByte (0x0);
-			o.WriteByte (0x0);
-		}
-
-		public void WriteManagedToJava (Stream output)
-		{
-			if (output == null)
-				throw new ArgumentNullException ("output");
-
-			var typeMap = GetTypeMapping (
-					t => false,
-					t => t.GetPartialAssemblyQualifiedName (),
-					JavaNativeTypeManager.ToJniName);
-
-			WriteBinaryMapping (output, typeMap);
 		}
 	}
 
