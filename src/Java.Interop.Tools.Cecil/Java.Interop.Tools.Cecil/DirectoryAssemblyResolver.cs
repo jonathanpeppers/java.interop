@@ -270,9 +270,9 @@ namespace Java.Interop.Tools.Cecil {
 			if (!Directory.Exists (directory))
 				return "";
 
-			var files = Directory.GetFiles (directory, file);
-			if (files != null && files.Length > 0)
-				return files [0];
+			foreach (var f in Directory.EnumerateFiles (directory, file)) {
+				return f;
+			}
 
 			return "";
 		}
