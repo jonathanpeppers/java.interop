@@ -38,6 +38,8 @@ using System.Reflection;
 using Java.Interop.Tools.Diagnostics;
 
 using Mono.Cecil;
+using Mono.Cecil.Cil;
+using System.IO.MemoryMappedFiles;
 
 namespace Java.Interop.Tools.Cecil {
 
@@ -66,6 +68,7 @@ namespace Java.Interop.Tools.Cecil {
 		Action<TraceLevel, string>              logger;
 
 		ReaderParameters                        loadReaderParameters;
+		readonly List<IDisposable>              disposables = new List<IDisposable> ();
 
 		static  readonly    ReaderParameters    DefaultLoadReaderParameters = new ReaderParameters {
 		};
@@ -97,12 +100,18 @@ namespace Java.Interop.Tools.Cecil {
 
 		protected virtual void Dispose (bool disposing)
 		{
-			if (!disposing || cache == null)
+			if (!disposing)
 				return;
-			foreach (var e in cache) {
-				e.Value.Dispose ();
+			if (cache != null) {
+				foreach (var e in cache) {
+					e.Value.Dispose ();
+				}
+				cache = null;
 			}
-			cache = null;
+			foreach (var d in disposables) {
+				d.Dispose ();
+			}
+			disposables.Clear ();
 		}
 
 		public Dictionary<string, AssemblyDefinition> ToResolverCache ()
@@ -159,15 +168,33 @@ namespace Java.Interop.Tools.Cecil {
 				SymbolReaderProvider            = loadReaderParameters.SymbolReaderProvider,
 				SymbolStream                    = loadReaderParameters.SymbolStream,
 			};
+			// Create stream because CreateFromFile(string, ...) uses FileShare.None which is too strict
+			using var fileStream = File.OpenRead (file);
+			using var mappedFile = MemoryMappedFile.CreateFromFile (
+					fileStream, mapName: null, fileStream.Length, MemoryMappedFileAccess.Read, HandleInheritability.None, leaveOpen: true);
+			var viewStream = mappedFile.CreateViewStream (offset: 0, size: 0, MemoryMappedFileAccess.Read);
 			try {
-				return AssemblyDefinition.ReadAssembly (file, reader_parameters);
-			} catch (Exception ex) {
+				var assembly = AssemblyDefinition.ReadAssembly (viewStream, reader_parameters);
+				disposables.Add (viewStream);
+				viewStream = null;
+				return assembly;
+			} catch (Exception ex) when (ex is SymbolsNotFoundException || ex is SymbolsNotMatchingException) {
 				logger (
 						TraceLevel.Verbose,
 						$"Failed to read '{file}' with debugging symbols. Retrying to load it without it. Error details are logged below.");
 				logger (TraceLevel.Verbose, $"{ex.ToString ()}");
 				reader_parameters.ReadSymbols = false;
-				return AssemblyDefinition.ReadAssembly (file, reader_parameters);
+				viewStream.Position = 0;
+				var assembly = AssemblyDefinition.ReadAssembly (viewStream, reader_parameters);
+				disposables.Add (viewStream);
+				viewStream = null;
+				return assembly;
+			} catch {
+				throw;
+			} finally {
+				if (viewStream != null) {
+					viewStream.Dispose ();
+				}
 			}
 		}
 
