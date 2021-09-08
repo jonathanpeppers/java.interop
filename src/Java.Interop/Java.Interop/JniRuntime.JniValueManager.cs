@@ -3,12 +3,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Threading;
 
 using Java.Interop.Expressions;
 
@@ -335,12 +332,12 @@ namespace Java.Interop
 
 			static ConstructorInfo? GetActivationConstructor (Type type)
 			{
-				return
-					(from c in type.GetConstructors (BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-					 let p = c.GetParameters ()
-					 where p.Length == 2 && p [0].ParameterType == ByRefJniObjectReference && p [1].ParameterType == typeof (JniObjectReferenceOptions)
-					 select c)
-				.FirstOrDefault ();
+				foreach (var ctor in type.GetConstructors (BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)) {
+					var p = ctor.GetParameters ();
+					if (p.Length == 2 && p [0].ParameterType == ByRefJniObjectReference && p [1].ParameterType == typeof (JniObjectReferenceOptions))
+						return ctor;
+				}
+				return null;
 			}
 
 
@@ -533,12 +530,19 @@ namespace Java.Interop
 						return marshaler.Value;
 				}
 
-				var listIface   = typeof (IList<>);
-				var listType    =
-					(from iface in type.GetInterfaces ().Concat (new[]{type})
-					 where (listIface).IsAssignableFrom (iface.IsGenericType ? iface.GetGenericTypeDefinition () : iface)
-					 select iface)
-					.FirstOrDefault ();
+				Type listIface   = typeof (IList<>);
+				Type? listType = null;
+				foreach (Type iface in type.GetInterfaces ()) {
+					if (listIface.IsAssignableFrom (iface.IsGenericType ? iface.GetGenericTypeDefinition () : iface)) {
+						listType = iface;
+						break;
+					}
+				}
+				if (listType == null) {
+					if (listIface.IsAssignableFrom (type.IsGenericType ? type.GetGenericTypeDefinition () : type)) {
+						listType = type;
+					}
+				}
 				if (listType != null) {
 					var elementType = listType.GenericTypeArguments [0];
 					if (elementType.IsValueType) {

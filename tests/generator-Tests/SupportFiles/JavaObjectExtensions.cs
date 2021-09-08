@@ -55,9 +55,9 @@ namespace Java.Interop {
 			throw new NotImplementedException ();
 		}
 
-		// typeof(Foo) -> FooSuffix
-		// typeof(Foo<>) -> FooSuffix`1
-		internal static Type GetHelperType (Type type, string suffix)
+		// typeof(Foo) -> FooInvoker
+		// typeof(Foo<>) -> FooInvoker`1
+		internal static Type GetInvokerType (Type type)
 		{
 			throw new NotImplementedException ();
 		}

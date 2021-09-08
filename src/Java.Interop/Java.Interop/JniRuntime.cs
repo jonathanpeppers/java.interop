@@ -3,8 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 
@@ -112,7 +110,7 @@ namespace Java.Interop
 			return NativeMethods.java_interop_jvm_list (handles, bufLen, out nVMs);
 		}
 
-		public static IEnumerable<IntPtr> GetAvailableInvocationPointers ()
+		public static IntPtr [] GetAvailableInvocationPointers ()
 		{
 			int nVMs;
 			int r = GetCreatedJavaVMs (null, 0, out nVMs);
@@ -145,7 +143,10 @@ namespace Java.Interop
 				if (count > 1)
 					throw new NotSupportedException (string.Format ("Found {0} Java Runtimes. Don't know which to use. Use JniRuntime.SetCurrent().", count));
 				Debug.Assert (count == 0);
-				var available   = GetAvailableInvocationPointers ().FirstOrDefault ();
+				var invocationPointers   = GetAvailableInvocationPointers ();
+				IntPtr available = default;
+				if (invocationPointers.Length > 0)
+					available = invocationPointers [0];
 				if (available == IntPtr.Zero)
 					throw new NotSupportedException ("No available Java runtime to attach to. Please create one.");
 				var options     = new CreationOptions () {

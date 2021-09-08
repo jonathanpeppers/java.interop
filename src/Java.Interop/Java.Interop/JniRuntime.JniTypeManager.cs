@@ -1,9 +1,7 @@
-﻿#nullable enable
+#nullable enable
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -157,7 +155,10 @@ namespace Java.Interop {
 			// `type` will NOT be an array type.
 			protected virtual string? GetSimpleReference (Type type)
 			{
-				return GetSimpleReferences (type).FirstOrDefault ();
+				foreach (var reference in GetSimpleReferences (type)) {
+					return reference;
+				}
+				return null;
 			}
 
 			// `type` will NOT be an array type.
@@ -178,9 +179,10 @@ namespace Java.Interop {
 
 			public  Type?    GetType (JniTypeSignature typeSignature)
 			{
-				AssertValid ();
-
-				return GetTypes (typeSignature).FirstOrDefault ();
+				foreach (var type in GetTypes (typeSignature)) {
+					return type;
+				}
+				return null;
 			}
 
 			public virtual IEnumerable<Type> GetTypes (JniTypeSignature typeSignature)

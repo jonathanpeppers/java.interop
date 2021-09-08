@@ -3,14 +3,13 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Reflection;
-using System.Security.Cryptography;
 using System.Text;
 using Android.Runtime;
 using Java.Interop.Tools.JavaCallableWrappers;
 
 #if HAVE_CECIL
+using System.Linq;
 using Mono.Cecil;
 using Java.Interop.Tools.Cecil;
 #endif  // HAVE_CECIL
@@ -170,8 +169,8 @@ namespace Java.Interop.Tools.TypeNameMappings
 			if (type == typeof (string))
 				return "java/lang/String";
 
-
-			if (!type.GetInterfaces ().Any (t => t.FullName == "Android.Runtime.IJavaObject"))
+			var iface = type.GetInterface ("Android.Runtime.IJavaObject");
+			if (iface == null)
 				return GetSpecialExportJniType (type.FullName!, exportKind);
 
 			return ToJniName (type, t => t.DeclaringType!, t => t.Name, GetPackageName, t => {
