@@ -1,7 +1,9 @@
 #nullable enable
 
 using System;
+using System.Diagnostics;
 using System.Runtime.ExceptionServices;
+using System.Runtime.InteropServices;
 
 namespace Java.Interop
 {
@@ -10,7 +12,7 @@ namespace Java.Interop
 		partial class InstanceMethods
 		{
 #if !NETSTANDARD2_0
-			public static unsafe JniMethodInfo GetMethodID (JniObjectReference type, ReadOnlySpan<char> name, ReadOnlySpan<char> signature)
+			internal static unsafe JniMethodInfo GetMethodID (JniObjectReference type, ReadOnlySpan<char> name, ReadOnlySpan<char> signature)
 			{
 				if (!type.IsValid)
 					throw new ArgumentException ("Handle must be valid.", "type");
@@ -19,8 +21,9 @@ namespace Java.Interop
 				if (signature.IsEmpty)
 					throw new ArgumentNullException ("signature");
 
-				fixed (char* ptr = signature) {
-					var tmp = NativeMethods.java_interop_jnienv_get_method_id (JniEnvironment.EnvironmentPointer, out var thrown, type.Handle, name.ToString (), ptr);
+				fixed (char* sig = &MemoryMarshal.GetReference (signature)) {
+					Debug.Assert (sig [signature.Length] == 0, signature.ToString () + " should be a null-terminated string");
+					var tmp = NativeMethods.java_interop_jnienv_get_method_id (JniEnvironment.EnvironmentPointer, out var thrown, type.Handle, name.ToString (), sig);
 
 					var __e = JniEnvironment.GetExceptionForLastThrowable (thrown);
 					if (__e != null)
