@@ -41,6 +41,21 @@ namespace Java.Interop
 			IsStatic    = isStatic;
 		}
 
+#if !NETSTANDARD2_0
+#pragma warning disable CA1801 // Review unused parameters
+		public JniFieldInfo (ReadOnlySpan<char> name, ReadOnlySpan<char> signature, IntPtr fieldID, bool isStatic)
+#pragma warning restore CA1801 // Review unused parameters
+		{
+			ID = fieldID;
+			IsStatic = isStatic;
+
+#if DEBUG
+			this.name = name.ToString ();
+			this.signature = signature.ToString ();
+#endif  // DEBUG
+		}
+#endif
+
 		public JniFieldInfo (string name, string signature, IntPtr fieldID, bool isStatic)
 		{
 			ID              = fieldID;

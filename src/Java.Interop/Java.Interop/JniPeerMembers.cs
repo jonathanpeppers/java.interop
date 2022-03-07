@@ -180,12 +180,22 @@ namespace Java.Interop {
 			return n;
 		}
 
+#if NETSTANDARD2_0
 		internal static void GetNameAndSignature (string encodedMember, out string name, out string signature)
 		{
 			int n       = GetSignatureSeparatorIndex (encodedMember);
 			name        = encodedMember.Substring (0, n);
 			signature   = encodedMember.Substring (n + 1);
 		}
+#else
+		internal static void GetNameAndSignature (string encodedMember, out ReadOnlySpan<char> name, out ReadOnlySpan<char> signature)
+		{
+			int n       = GetSignatureSeparatorIndex (encodedMember);
+			var span    = encodedMember.AsSpan ();
+			name        = span.Slice (0, n);
+			signature   = span.Slice (n + 1);
+		}
+#endif
 	}
 }
 

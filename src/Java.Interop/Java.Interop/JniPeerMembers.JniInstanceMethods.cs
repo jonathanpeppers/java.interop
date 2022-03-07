@@ -85,8 +85,7 @@ namespace Java.Interop
 		{
 			lock (InstanceMethods) {
 				if (!InstanceMethods.TryGetValue (encodedMember, out var m)) {
-					string method, signature;
-					JniPeerMembers.GetNameAndSignature (encodedMember, out method, out signature);
+					JniPeerMembers.GetNameAndSignature (encodedMember, out var method, out var signature);
 					m = JniPeerType.GetInstanceMethod (method, signature);
 					InstanceMethods.Add (encodedMember, m);
 				}
@@ -141,7 +140,7 @@ namespace Java.Interop
 			var ctor    = methods.GetConstructor (constructorSignature);
 			JniEnvironment.InstanceMethods.CallNonvirtualVoidMethod (self.PeerReference, methods.JniPeerType.PeerReference, ctor, parameters);
 		}
-	}
+		}
 	}
 }
 

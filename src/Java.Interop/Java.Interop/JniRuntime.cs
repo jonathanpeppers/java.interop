@@ -79,10 +79,22 @@ namespace Java.Interop
 	}
 
 	partial class NativeMethods {
-		const string JavaInteropLibrary = "java-interop";
-
-		[DllImport (JavaInteropLibrary, CallingConvention=CallingConvention.Cdecl)]
+		[DllImport (JavaInteropLib, CallingConvention = CallingConvention.Cdecl)]
 		internal static extern int java_interop_jvm_list ([Out] IntPtr[]? handles, int bufLen, out int nVMs);
+
+#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments
+		[DllImport (JavaInteropLib, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+		internal static extern unsafe IntPtr java_interop_jnienv_get_field_id (IntPtr jnienv, out IntPtr thrown, IntPtr type, string name, [MarshalAs (UnmanagedType.LPStr)] char* signature);
+
+		[DllImport (JavaInteropLib, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+		internal static extern unsafe IntPtr java_interop_jnienv_get_method_id (IntPtr jnienv, out IntPtr thrown, IntPtr type, string name, [MarshalAs (UnmanagedType.LPStr)] char* signature);
+
+		[DllImport (JavaInteropLib, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+		internal static extern unsafe IntPtr java_interop_jnienv_get_static_field_id (IntPtr jnienv, out IntPtr thrown, IntPtr type, string name, [MarshalAs (UnmanagedType.LPStr)] char* signature);
+
+		[DllImport (JavaInteropLib, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+		internal static extern unsafe IntPtr java_interop_jnienv_get_static_method_id (IntPtr jnienv, out IntPtr thrown, IntPtr type, string name, [MarshalAs (UnmanagedType.LPStr)] char* signature);
+#pragma warning restore CA2101 // Specify marshaling for P/Invoke string arguments
 	}
 
 	public partial class JniRuntime : IDisposable

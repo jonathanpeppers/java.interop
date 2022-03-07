@@ -26,8 +26,7 @@ namespace Java.Interop
 		{
 			lock (StaticMethods) {
 				if (!StaticMethods.TryGetValue (encodedMember, out var m)) {
-					string method, signature;
-					JniPeerMembers.GetNameAndSignature (encodedMember, out method, out signature);
+					JniPeerMembers.GetNameAndSignature (encodedMember, out var method, out var signature);
 					m = Members.JniPeerType.GetStaticMethod (method, signature);
 					StaticMethods.Add (encodedMember, m);
 				}

@@ -189,6 +189,15 @@ namespace Java.Interop {
 			return JniEnvironment.Object.NewObject (PeerReference, constructor, parameters);
 		}
 
+#if !NETSTANDARD2_0
+		public JniFieldInfo GetInstanceField (ReadOnlySpan<char> name, ReadOnlySpan<char> signature)
+		{
+			AssertValid ();
+
+			return JniEnvironment.InstanceFields.GetFieldID (PeerReference, name, signature);
+		}
+#endif
+
 		public JniFieldInfo GetInstanceField (string name, string signature)
 		{
 			AssertValid ();
@@ -208,6 +217,15 @@ namespace Java.Interop {
 			}
 			return cachedField;
 		}
+
+#if !NETSTANDARD2_0
+		public JniFieldInfo GetStaticField (ReadOnlySpan<char> name, ReadOnlySpan<char> signature)
+		{
+			AssertValid ();
+
+			return JniEnvironment.StaticFields.GetStaticFieldID (PeerReference, name, signature);
+		}
+#endif
 
 		public JniFieldInfo GetStaticField (string name, string signature)
 		{
@@ -229,6 +247,15 @@ namespace Java.Interop {
 			return cachedField;
 		}
 
+#if !NETSTANDARD2_0
+		public JniMethodInfo GetInstanceMethod (ReadOnlySpan<char> name, ReadOnlySpan<char> signature)
+		{
+			AssertValid ();
+
+			return JniEnvironment.InstanceMethods.GetMethodID (PeerReference, name, signature);
+		}
+#endif
+
 		public JniMethodInfo GetInstanceMethod (string name, string signature)
 		{
 			AssertValid ();
@@ -248,6 +275,15 @@ namespace Java.Interop {
 			}
 			return cachedMethod;
 		}
+
+#if !NETSTANDARD2_0
+		public JniMethodInfo GetStaticMethod (ReadOnlySpan<char> name, ReadOnlySpan<char> signature)
+		{
+			AssertValid ();
+
+			return JniEnvironment.StaticMethods.GetStaticMethodID (PeerReference, name, signature);
+		}
+#endif
 
 		public JniMethodInfo GetStaticMethod (string name, string signature)
 		{
