@@ -162,33 +162,38 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 					 type.IsSubclassOf ("Android.Content.ContentProvider", cache)))
 				Diagnostic.Error (4203, LookupSource (type), Localization.Resources.JavaCallableWrappers_XA4203, jniName);
 
-			foreach (MethodDefinition minfo in type.Methods.Where (m => !m.IsConstructor)) {
+			foreach (MethodDefinition minfo in type.Methods) {
+				if (minfo.IsConstructor)
+					continue;
 				var baseRegisteredMethod = GetBaseRegisteredMethod (minfo);
 				if (baseRegisteredMethod != null)
 					AddMethod (baseRegisteredMethod, minfo);
-				else if (GetExportFieldAttributes (minfo).Any ()) {
+				else if (GetExportFieldAttribute (minfo) != null) {
 					AddMethod (null, minfo);
 					HasExport = true;
-				} else if (GetExportAttributes (minfo).Any ()) {
+				} else if (GetExportAttribute (minfo) != null) {
 					AddMethod (null, minfo);
 					HasExport = true;
 				}
 			}
 
-			foreach (MethodDefinition imethod in type.Interfaces.Select (ifaceInfo => ifaceInfo.InterfaceType)
-					.Select (r => {
-						var d = r.Resolve ();
-						if (d == null)
-							Diagnostic.Error (4204,
-									LookupSource (type),
-									Localization.Resources.JavaCallableWrappers_XA4204,
-									r.FullName);
-						return d;
-					})
-					.Where (d => d != null && GetTypeRegistrationAttributes (d).Any ())
-					.SelectMany (d => d!.Methods)
-					.Where (m => !m.IsStatic)) {
-				AddMethod (imethod, imethod);
+			foreach (InterfaceImplementation ifaceInfo in type.Interfaces) {
+				var typeReference = ifaceInfo.InterfaceType;
+				var typeDefinition = resolver != null ? resolver.Resolve (typeReference) : typeReference.Resolve ();
+				if (typeDefinition == null) {
+					Diagnostic.Error (4204,
+						LookupSource (type),
+						Localization.Resources.JavaCallableWrappers_XA4204,
+						typeReference.FullName);
+					continue;
+				}
+				if (!GetTypeRegistrationAttributes (typeDefinition).Any ())
+					continue;
+				foreach (MethodDefinition imethod in typeDefinition.Methods) {
+					if (imethod.IsStatic)
+						continue;
+					AddMethod (imethod, imethod);
+				}
 			}
 
 			var ctorTypes = new List<TypeDefinition> () {
@@ -204,8 +209,10 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 
 			var curCtors = new List<MethodDefinition> ();
 
-			foreach (MethodDefinition minfo in type.Methods.Where (m => m.IsConstructor)) {
-				if (GetExportAttributes (minfo).Any ()) {
+			foreach (MethodDefinition minfo in type.Methods) {
+				if (minfo.IsConstructor)
+					continue;
+				if (GetExportAttribute (minfo) != null) {
 					if (minfo.IsStatic) {
 						// Diagnostic.Warning (log, "ExportAttribute does not work on static constructor");
 					}
@@ -278,7 +285,7 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 		void AddConstructors (TypeDefinition type, string? outerType, List<MethodDefinition>? baseCtors, List<MethodDefinition> curCtors, bool onlyRegisteredOrExportedCtors)
 		{
 			foreach (MethodDefinition ctor in type.Methods.Where (m => m.IsConstructor && !m.IsStatic))
-				if (!GetExportAttributes (ctor).Any ())
+				if (GetExportAttribute (ctor) != null)
 					AddConstructor (ctor, type, outerType, baseCtors, curCtors, onlyRegisteredOrExportedCtors, false);
 		}
 
@@ -289,7 +296,7 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 					return;
 				}
 
-				ExportAttribute eattr = GetExportAttributes (ctor).FirstOrDefault ();
+				ExportAttribute? eattr = GetExportAttribute (ctor);
 				if (eattr != null) {
 					if (!string.IsNullOrEmpty (eattr.Name)) {
 						// Diagnostic.Warning (log, "Use of ExportAttribute.Name property is invalid on constructors");
@@ -419,8 +426,12 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 
 		internal static IEnumerable<RegisterAttribute> GetTypeRegistrationAttributes (Mono.Cecil.ICustomAttributeProvider p)
 		{
-			foreach (var a in GetAttributes<RegisterAttribute> (p, a => ToRegisterAttribute (a))) {
-				yield return a;
+			foreach (var a in p.GetCustomAttributes (typeof (RegisterAttribute))) {
+				var r = ToRegisterAttribute (a);
+				if (r == null) {
+					continue;
+				}
+				yield return r;
 			}
 			foreach (var c in p.GetCustomAttributes ("Java.Interop.JniTypeSignatureAttribute")) {
 				var r = RegisterFromJniTypeSignatureAttribute (c);
@@ -433,8 +444,12 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 
 		static IEnumerable<RegisterAttribute> GetMethodRegistrationAttributes (Mono.Cecil.ICustomAttributeProvider p)
 		{
-			foreach (var a in GetAttributes<RegisterAttribute> (p, a => ToRegisterAttribute (a))) {
-				yield return a;
+			foreach (var a in p.GetCustomAttributes (typeof (RegisterAttribute))) {
+				var r = ToRegisterAttribute (a);
+				if (r == null) {
+					continue;
+				}
+				yield return r;
 			}
 			foreach (var c in p.GetCustomAttributes ("Java.Interop.JniMethodSignatureAttribute")) {
 				var r = RegisterFromJniMethodSignatureAttribute (c);
@@ -445,23 +460,20 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 			}
 		}
 
-		IEnumerable<ExportAttribute> GetExportAttributes (IMemberDefinition p)
+		ExportAttribute? GetExportAttribute (IMemberDefinition p)
 		{
-			return GetAttributes<ExportAttribute> (p, a => ToExportAttribute (a, p));
+			foreach (var a in p.GetCustomAttributes (typeof (ExportAttribute))) {
+				return ToExportAttribute (a, p);
+			}
+			return null;
 		}
 
-		static IEnumerable<ExportFieldAttribute> GetExportFieldAttributes (Mono.Cecil.ICustomAttributeProvider p)
+		static ExportFieldAttribute? GetExportFieldAttribute (Mono.Cecil.ICustomAttributeProvider p)
 		{
-			return GetAttributes<ExportFieldAttribute> (p, a => ToExportFieldAttribute (a));
-		}
-
-		static IEnumerable<TAttribute> GetAttributes<TAttribute> (Mono.Cecil.ICustomAttributeProvider p, Func<CustomAttribute, TAttribute?> selector)
-			where TAttribute : class
-		{
-			return p.GetCustomAttributes (typeof (TAttribute))
-				.Select (selector)
-				.Where (v => v != null)
-				.Select (v => v!);
+			foreach (var a in p.GetCustomAttributes (typeof (ExportFieldAttribute))) {
+				return ToExportFieldAttribute (a);
+			}
+			return null;
 		}
 
 		void AddMethod (MethodDefinition? registeredMethod, MethodDefinition implementedMethod)
@@ -477,25 +489,25 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 					if (!registeredMethod.IsConstructor && !methods.Any (m => m.Name == msig.Name && m.Params == msig.Params))
 						methods.Add (msig);
 				}
-			foreach (ExportAttribute attr in GetExportAttributes (implementedMethod)) {
+			if (GetExportAttribute (implementedMethod) is ExportAttribute exportAttribute) {
 				if (type.HasGenericParameters)
 					Diagnostic.Error (4206, LookupSource (implementedMethod), Localization.Resources.JavaCallableWrappers_XA4206);
 
-				var msig = new Signature (implementedMethod, attr, cache);
-				if (!string.IsNullOrEmpty (attr.SuperArgumentsString)) {
+				var msig = new Signature (implementedMethod, exportAttribute, cache);
+				if (!string.IsNullOrEmpty (exportAttribute.SuperArgumentsString)) {
 					// Diagnostic.Warning (log, "Use of ExportAttribute.SuperArgumentsString property is invalid on methods");
 				}
 				if (!implementedMethod.IsConstructor && !methods.Any (m => m.Name == msig.Name && m.Params == msig.Params))
 					methods.Add (msig);
 			}
-			foreach (ExportFieldAttribute attr in GetExportFieldAttributes (implementedMethod)) {
+			if (GetExportFieldAttribute (implementedMethod) is ExportFieldAttribute exportFieldAttribute) {
 				if (type.HasGenericParameters)
 					Diagnostic.Error (4207, LookupSource (implementedMethod), Localization.Resources.JavaCallableWrappers_XA4207);
 
-				var msig = new Signature (implementedMethod, attr, cache);
+				var msig = new Signature (implementedMethod, exportFieldAttribute, cache);
 				if (!implementedMethod.IsConstructor && !methods.Any (m => m.Name == msig.Name && m.Params == msig.Params)) {
 					methods.Add (msig);
-					exported_fields.Add (new JavaFieldInfo (implementedMethod, attr.Name, cache));
+					exported_fields.Add (new JavaFieldInfo (implementedMethod, exportFieldAttribute.Name, cache));
 				}
 			}
 		}
@@ -811,7 +823,7 @@ namespace Java.Interop.Tools.JavaCallableWrappers {
 
 		static string GetJavaTypeName (TypeReference r, IMetadataResolver cache)
 		{
-			TypeDefinition d = r.Resolve ();
+			TypeDefinition d = cache.Resolve (r);
 			string? jniName = JavaNativeTypeManager.ToJniName (d, cache);
 			if (jniName == null) {
 				Diagnostic.Error (4201, Localization.Resources.JavaCallableWrappers_XA4201, r.FullName);
